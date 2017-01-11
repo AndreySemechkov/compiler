@@ -1,0 +1,19 @@
+real power (c:real, m:integer)
+var d:real;
+{
+    if m==0 then return(1.0);
+    if m==1 then return(c);
+    d=call power(c,m-1);
+    return(c*d);
+}
+
+main
+var a:real;
+    b:real;
+    n:integer;
+{
+    read(a);
+    read(n);
+    b=call power (a,n);
+    write(b);
+}

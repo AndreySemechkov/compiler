@@ -1,0 +1,24 @@
+defstruct {
+    fl1 : integer;
+    anotherFl : real;
+    oneMore, twoMore: integer;
+} Myst;
+
+main
+var a:real;
+    b:integer;
+{
+	read(a);
+	read(b);
+	if a < (real)b then write(a);
+	else write(b);
+
+	var a: Myst; // Start new BLK
+    {
+        a[fl1] = b;
+        a[anotherFl] = 0.1 * (real)b;
+        write("\nfl1="); write(a[fl1]);
+        write("\tanotherFl="); write(a[anotherFl]);
+    }
+    write("\nat main BLK a="); write(a);
+}

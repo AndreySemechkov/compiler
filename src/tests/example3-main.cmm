@@ -1,0 +1,11 @@
+extern integer foo2();
+extern integer foo(c: integer);
+
+main
+var a:integer;
+    b: real;
+{
+	a =2;
+    b = (real) call foo(a );
+	write(b);
+}
