@@ -412,13 +412,43 @@ BEXP: BEXP TK_or BEXP {
 ***********************************************************************************/
 
 EXP: EXP TK_addop EXP {
-
-//check types
-if($1.type != $3.type){ //different types
-	//erorr
 	
-}
+	int leftRegister = $1.registerNum;
+	int rightRegister = $3.registerNum;
+
+	//check types
+	if($1.type != $3.type){ //different types
+		//erorr
+		cerr << "Semantic error: " 
+				<< "differnt types, EXP+EXP"
+				<< "in line number " << to_string(yylineno)  << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	//set my type
+	if($1.type == REAL){
+		$$.type = REAL;
+	}else if($1.type = INT){
+		$$.type = INT;
+	}
+	
+	//EMIT
+		
+	string myType = ($$.type == REAL) ? "R" : "I" ;
+	
+	//$$.registerNum = globalCurrentScopeRegisterCounter[$$.type]++;
+		
+		if ($2.value == "+") {
+			buffer.emit("ADD2" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		} 
+		else { // "-"
+			buffer.emit("SUBT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		}	
+
+	
 | EXP TK_mulop EXP { 
+	
+	int leftRegister = $1.registerNum;
+	int rightRegister = $3.registerNum;
 	
 	//check types
 	if($1.type != $3.type){ //different types
@@ -436,6 +466,19 @@ if($1.type != $3.type){ //different types
 	}
 
 	//TODO: EMIT
+	
+	//EMIT
+		
+	string myType = ($$.type == REAL) ? "R" : "I" ;
+	
+	//$$.registerNum = globalCurrentScopeRegisterCounter[$$.type]++;
+		
+		if ($2.value == "*") {
+			buffer.emit("MULT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		} 
+		else { // "/"
+			buffer.emit("DIVD" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		}	
 
 	
 }
@@ -526,6 +569,6 @@ CALL_ARGS: EXP { $$.node = makeNode("CALL_ARGS",NULL, $1.node);}
 void yyerror(const char* msg)
 {
   printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
-  exit(2);
+  exit(EXIT_SYNTAX_FAILURE);
 }
 

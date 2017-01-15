@@ -133,15 +133,16 @@ void printError(){
 // Creates and Sets the value of the node according to the lexema
 void setValue (string type,char* value) {
 
+//initialize type
  if(type == "real") 
     yylval.type = REAL;
  else if (type == "integer") 
     yylval.type = INT;
-    else 
-    	yylval.type = NONE;
-    	        
-
-
+  else 
+    yylval.type = NONE;
+    
+    //initialize value
+  yylval.value = value ? value : "" ; 
 
 }
 

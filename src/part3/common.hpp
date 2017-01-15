@@ -15,26 +15,34 @@
 #define EXIT_SEMANTIC_FAILURE 3
 #define EXIT_OPERATIONAL_FAILURE 9
 
-typedef enum { REAL, INT, NONE } t_type ;
-
-
+/*
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+*/
+
+typedef enum { REAL, INT, NONE } t_type ;
+
 
 /* common struct to use for bison and flex*/
 typedef struct {
 	t_type type;
 	std::string value; // for keeping multiple types.
+	int registerNum;
 
 } yystype_t;
 
 #define YYSTYPE yystype_t 
 
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
+
+
+
+
 
 
 
