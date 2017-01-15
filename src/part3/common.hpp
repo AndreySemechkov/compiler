@@ -6,15 +6,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <iostream>
+#include <stdio.h>
 
-typedef enum { REAL, INT } t_type ;
+
+#define EXIT_LEXICAL_FAILURE 1
+#define EXIT_SYNTAX_FAILURE 2
+#define EXIT_SEMANTIC_FAILURE 3
+#define EXIT_OPERATIONAL_FAILURE 9
+
+typedef enum { REAL, INT, NONE } t_type ;
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 /* common struct to use for bison and flex*/
 typedef struct {

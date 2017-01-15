@@ -131,11 +131,18 @@ void printError(){
 }
 
 // Creates and Sets the value of the node according to the lexema
-void setValue (char* type,char* value) {
-        //We started with a diffrent implementation in mind 
-        //and then changed to the makeNode design for automation
-        //Thus we create the token node for the parser tree here 
-        yylval.type = REAL;     
+void setValue (string type,char* value) {
+
+ if(type == "real") 
+    yylval.type = REAL;
+ else if (type == "integer") 
+    yylval.type = INT;
+    else 
+    	yylval.type = NONE;
+    	        
+
+
+
 }
 
 

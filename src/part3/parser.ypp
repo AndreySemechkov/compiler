@@ -7,8 +7,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "part2_helpers.h"
-#include "parser.tab.h"
+#include "common.hpp"
+#include "parser.tab.hpp"
+	
+		using namespace std;
+
 ParserNode* parseTree;
 /**********************************************************************************
 *                                   Header
@@ -413,26 +416,47 @@ EXP: EXP TK_addop EXP {
 //check types
 if($1.type != $3.type){ //different types
 	//erorr
-	
+	cerr << "Semantic error: " 
+			<< "differnt types, EXP+EXP"
+			<< "in line number " << to_string(yylineno)  << endl;
+	exit(EXIT_SEMANTIC_FAILURE);
+}
+//set my type
+if($1.type == REAL){
+	$$.type = REAL;
+}else if($1.type = INT){
+	$$.type = INT;
 }
 
+//TODO: EMIT
 
 
 
- 
-  $1.node = concatList($1.node,$2.node);
-  $1.node = concatList($1.node,$3.node);
-  $$.node = makeNode("EXP",NULL,$1.node);
 }
 | EXP TK_mulop EXP { 
-  $1.node = concatList($1.node,$2.node);
-  $1.node = concatList($1.node,$3.node);
-  $$.node = makeNode("EXP",NULL,$1.node);
+	
+	//check types
+	if($1.type != $3.type){ //different types
+		//erorr
+		cerr << "Semantic error: " 
+				<< "differnt types, EXP*EXP"
+				<< "in line number " << to_string(yylineno)  << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	//set my type
+	if($1.type == REAL){
+		$$.type = REAL;
+	}else if($1.type = INT){
+		$$.type = INT;
+	}
+
+	//TODO: EMIT
+
+	
 }
 | '(' EXP ')' { 
-  $1.node = concatList($1.node,$2.node);
-  $1.node = concatList($1.node,$3.node);
-  $$.node = makeNode("EXP",NULL,$1.node);
+	
+	$$ = $2
 }
 | '(' TYPE ')' EXP { 
   $1.node = concatList($1.node,$2.node);
@@ -444,7 +468,7 @@ if($1.type != $3.type){ //different types
   $$.node = makeNode("EXP",NULL,$1.node);
 }
 | STREF {
-  $$.node = makeNode("EXP",NULL,$1.node);
+
 }
 | TK_num {
   $$.node = makeNode("EXP",NULL,$1.node);
