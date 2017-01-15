@@ -1,0 +1,1202 @@
+%{
+	#include "Common.hpp"
+	#include "Symbol.hpp"
+	#include "Function.hpp"
+	 
+	extern "C" int yylex();
+	extern "C" void yyerror(const char* c);
+	extern "C" int yylineno;
+	extern "C" char* yytext;
+
+	void yyerror(const char* c);
+	
+	Type globalCurrentReturnType = INTEGER;
+	using namespace std;
+%}
+
+/* Tokens */
+%token tk_real
+%token tk_integer
+%token tk_write
+%token tk_read
+%token tk_while
+%token tk_end
+%token tk_do
+%token tk_if
+%token tk_then
+%token tk_else
+%token tk_program
+%token tk_var
+%token tk_begin
+%token tk_call
+%token tk_include
+%token tk_return
+%token tk_identifier
+%token tk_num
+%token tk_str
+%token tk_colon 
+%token tk_semicolon
+%token tk_leftbracket
+%token tk_rightbracket
+%token tk_leftparen
+%token tk_rightparen
+%token tk_comma
+
+/* Operators - precedence and associativity */
+
+%right 	tk_assign
+%left 	tk_or
+%left 	tk_and
+%left 	tk_relop
+%left 	tk_addop
+%left 	tk_mulop
+%right	tk_not
+%left 	tk_leftbracket tk_rightbracket
+%left 	tk_leftparen tk_rightparen
+
+/* SOLVING conflicts */
+
+%precedence tk_then
+%precedence tk_else
+
+%%
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+PROGRAM : N { pFunction pExceptionFunction(new Function(INTEGER,-1,NULL));
+			  globalFunctionsMap["__exception_array_check"] = pExceptionFunction; } 
+			  FUNCTION M MAIN_FUNCTION
+{
+	// create header:
+	vector<string> headerVec;
+	headerVec.push_back("<header>");
+	
+	if (globalFunctionsMap.find("__main__") != globalFunctionsMap.end() ) {
+		globalQuadBuffer.backpatch($1.nextList,$4.quad);
+		globalQuadBuffer.emit("HALT");
+		headerVec.push_back("<main>");
+	}
+	else {
+		globalQuadBuffer.backpatch($1.nextList,0);
+		headerVec.push_back("<empty>");
+	}
+	
+	
+	string unimplemented = "<unimplemented> ";
+	string implemented = "<implemented> ";
+	map<FunctionName,pFunction>::iterator itr = globalFunctionsMap.begin();
+	while (itr != globalFunctionsMap.end()) {
+		int startLine = itr->second->getStartLine();
+		if(startLine == -1) {
+			unimplemented += itr->first;
+			for (int callLine : itr->second->getCallLines()) {
+				unimplemented += "," + to_string(callLine);
+			}
+			unimplemented += " ";
+		}
+		else {
+			if (itr->first != "__main__") {
+				implemented += itr->first;
+				implemented += "," + to_string(startLine) + " ";
+			}
+		}
+		itr++;
+	}
+	
+	headerVec.push_back(unimplemented);
+	headerVec.push_back(implemented);
+	headerVec.push_back("</header>");
+	for (string str : headerVec) {
+		cout << str << endl;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+FUNCTION :  
+FUNCTION SET_REGS_MARKER TYPE {globalCurrentReturnType = $3.type;} 
+tk_identifier tk_leftparen M  FUNC_ARGLIST_FULL tk_rightparen
+{
+	// mid rule - insert function name to function table in preparation for recursive call inside BLK:
+	
+	// create a new Function object:
+	string functionName = $5.content;
+	Type returnType = $3.type;
+	int startLine = $7.quad;
+	
+	// check if function already declared:
+	std::map<FunctionName,pFunction>::iterator itr = globalFunctionsMap.find(functionName);
+	if (itr != globalFunctionsMap.end()) {
+		cerr << "Semantic error: repeated declaration of function '" << functionName + "' ";
+		cerr << "in line number " << to_string(yylineno)  << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	pFunction pCurrentFuntion(new Function(
+		returnType,
+		startLine,
+		NULL
+		));
+	
+	//cerr << to_string($8.paramTypes.size()) << endl;
+	pCurrentFuntion->setParamTypes($8.paramTypes);
+	$8.paramTypes.clear();
+	// add the Function object to the Function Map:
+	
+	globalFunctionsMap[functionName] = pCurrentFuntion;
+}
+
+BLK
+{
+	// now the symbol table for the scope is complete.
+	// globalCurrentScopeSymbolTable needs to be copied and
+	// erased.
+	
+	// create an empty symbol for the function, and fill it with the current symbol table:
+	pSymbolTable pFunctionSymbolTable(new SymbolTable());
+	
+	pFunctionSymbolTable->insert(
+		globalCurrentScopeSymbolTable.begin(),
+		globalCurrentScopeSymbolTable.end()
+		);
+	globalCurrentScopeSymbolTable.erase(
+		globalCurrentScopeSymbolTable.begin(),
+		globalCurrentScopeSymbolTable.end()
+		);
+	globalFunctionsMap[$5.content]->setFuncSymbolTable(pFunctionSymbolTable);
+}
+| FUNCTION tk_include TYPE tk_identifier tk_leftparen FUNC_ARGLIST_FULL tk_rightparen tk_semicolon
+{
+	string functionName = $4.content;
+	Type returnType = $3.type;
+	int startLine = -1;
+	
+	// TODO: check if function already exist:
+	std::map<FunctionName,pFunction>::iterator itr = globalFunctionsMap.find(functionName);
+	
+	if (itr != globalFunctionsMap.end()) {
+		cerr << "Semantic error: repeated declaration of function '" << functionName + "' ";
+		cerr << "in line number " << to_string(yylineno)  << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	// create an empty symbol for the function, and fill it with the current symbol table
+	// which contains the function parameters names and type:
+	pSymbolTable pFunctionSymbolTable(new SymbolTable());
+	pFunctionSymbolTable->insert(
+		globalCurrentScopeSymbolTable.begin(),
+		globalCurrentScopeSymbolTable.end()
+		);
+	globalCurrentScopeSymbolTable.erase(
+		globalCurrentScopeSymbolTable.begin(),
+		globalCurrentScopeSymbolTable.end()
+		);
+	
+	pFunction pCurrentFuntion(new Function(
+		returnType,
+		startLine,
+		pFunctionSymbolTable
+		));
+	
+	pCurrentFuntion->setParamTypes($6.paramTypes);
+	$6.paramTypes.clear();
+	globalFunctionsMap[functionName] = pCurrentFuntion;
+}
+| /* EPSILON */
+{
+}
+
+SET_REGS_MARKER :
+{
+	globalCurrentScopeRegisterCounter[INTEGER] = 3;
+	globalCurrentScopeRegisterCounter[REAL] = 0;
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+FUNC_ARGLIST_FULL : FUNC_ARGLIST
+{
+	// the current scope global symbol table now contains symbols which are function parameters.
+	// they should not take additional space in memory.
+	// so we must set their offset according to their insertion order and set their size to 0:
+	
+	int offset = -2; // offset from I1 register
+	
+	for (string paramName : globalParamInsertionOrder) {
+		globalCurrentScopeSymbolTable[paramName]->setSize(0);
+		globalCurrentScopeSymbolTable[paramName]->setOffset(offset--);
+		$$.paramTypes.push_back(globalCurrentScopeSymbolTable[paramName]->getType());
+	}
+	globalParamInsertionOrder.clear();
+	globalCurrentScopeOffset -= globalParamInsertionOrder.size();
+}
+| /* EPSILON */
+{
+	
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+FUNC_ARGLIST : FUNC_ARGLIST tk_comma DCL
+{
+	
+}
+| DCL
+{
+	
+}
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+MAIN_FUNCTION : MAIN_SET_MEMORY_MARKER tk_program BLK
+{	
+	// create an empty symbol for the function, and fill it with the current symbol table:
+	pSymbolTable pFunctionSymbolTable(new SymbolTable());
+	
+	pFunctionSymbolTable->insert(
+		globalCurrentScopeSymbolTable.begin(),
+		globalCurrentScopeSymbolTable.end()
+		);
+	globalCurrentScopeSymbolTable.erase(
+		globalCurrentScopeSymbolTable.begin(),
+		globalCurrentScopeSymbolTable.end()
+		);
+	
+	// create a new Function object:
+	string functionName = "__main__";
+	Type returnType = INTEGER;
+	int startLine = 0; // TODO	
+	
+	pFunction pCurrentFuntion(new Function(
+		returnType,
+		startLine,
+		pFunctionSymbolTable
+		));
+	
+	// TODO: check if function already exist:
+	 
+	globalFunctionsMap[functionName] = pCurrentFuntion;
+	globalIsMain = false;
+}
+| /* EPSILON */ {}
+
+MAIN_SET_MEMORY_MARKER: /* EPSILON */
+{
+	globalCurrentScopeOffset = 0; // I1 = stack pointer for main
+	globalCurrentScopeRegisterCounter[INTEGER] = 1; // I0 reserved
+	globalCurrentScopeRegisterCounter[REAL] = 0;
+	
+	globalQuadBuffer.emit("COPYI I0 0");
+	globalQuadBuffer.emit("COPYI I1 0");
+	globalQuadBuffer.emit("COPYI I2 0");
+	globalCurrentScopeRegisterCounter[INTEGER] += 2;
+	globalIsMain = true;
+} 
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+BLK : DECLARATIONS tk_begin LIST M tk_end
+{	
+	// while parsing LIST we could not tell on which line
+	// all the commands (quads) it emits end.
+	// now we know - so backpatch.
+	globalQuadBuffer.backpatch($3.nextList, $4.quad);
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+//////////              DECLARATIONS SECTION                    /////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+DECLARATIONS : tk_var DECLARLIST
+{
+	// Now all the declarations have been parsed.
+	// the current Scope Symbol table contains all the variables and parameters.
+	// we can now set the stack size according to the total size of all the symbols
+	// declared. note that we need to count arrays as well. and local parameters have size = 0;
+	
+	int totalSize = 0;
+	
+	std::map<SymbolName, pSymbol>::iterator itr = globalCurrentScopeSymbolTable.begin();
+	
+	while( itr != globalCurrentScopeSymbolTable.end())
+	{
+		totalSize += itr->second->getSize();
+		itr++;
+	}
+	
+	globalQuadBuffer.emit("ADD2I I2 I1 " + to_string(totalSize));
+	
+}
+|  /* EPSILON */
+{
+	
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+DECLARLIST : DECLARLIST DCL tk_semicolon
+{
+}
+| DCL tk_semicolon
+{
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+DCL : IDENT tk_colon TYPE
+{
+	$$.content = $1.content;
+	$$.type = $3.type;
+	
+	globalCurrentScopeSymbolTable[$1.content]->setType($3.type);
+	
+}
+| IDENT tk_comma DCL
+{
+	$$.content = $1.content;
+	$$.type = $3.type;
+	
+	globalCurrentScopeSymbolTable[$1.content]->setType($3.type);
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+IDENT : tk_identifier
+{
+	$$.content = $1.content;
+	
+	// IDENT is only related to a variable declaration / function param,
+	// hence we should create another symbol:
+	
+	if (globalCurrentScopeSymbolTable.find($1.content) == globalCurrentScopeSymbolTable.end())
+	{
+		globalCurrentScopeSymbolTable[$1.content] = pSymbol(new Symbol(1, false)); // not an array
+		globalParamInsertionOrder.push_back($1.content);
+	}
+	else {
+		cerr << "Semantic error: repeated declaration of identifier '" << $1.content + "' ";
+		cerr << "in line number " << to_string(yylineno)  << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+}
+| tk_identifier tk_leftbracket tk_num tk_rightbracket
+{
+	// verify that tk_num is an INTEGER:
+	if ($3.content.find('.') != $3.content.npos) {
+		cerr << "Semantic error: use of real type to represent array index ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(1);
+	}
+	
+	$$.content = $1.content;
+	
+	// hence we should create another symbol:
+	if (globalCurrentScopeSymbolTable.find($1.content) == globalCurrentScopeSymbolTable.end())
+	{
+		unsigned int size = std::stoi($3.content);
+		globalCurrentScopeSymbolTable[$1.content] = pSymbol(new Symbol(size, true));
+	}
+	else {
+		cerr << "Semantic error: repeated declaration of identifier '" << $1.content + "' ";
+		cerr << "in line number " << to_string(yylineno)  << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+}
+ 
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+TYPE : tk_integer
+{
+	$$.type = INTEGER;
+}
+| tk_real
+{
+	$$.type = REAL;
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+//////////           FUNCTION / MAIN FUNCTION BODY              /////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+LIST : LIST M STMT
+{
+	$$.nextList = $3.nextList;
+	$3.nextList.clear();
+	globalQuadBuffer.backpatch($1.nextList, $2.quad);
+}
+| /* EPSILON */
+{
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+STMT : ASSN
+{
+
+}
+| CNTRL
+{
+	$$.nextList = $1.nextList;
+}
+| READ
+{
+	
+}
+| WRITE
+{
+	
+}
+| STMT_RETURN
+{
+	
+}
+| BLK
+{
+	
+} 
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+
+STMT_RETURN : tk_return tk_leftparen EXP tk_rightparen tk_semicolon
+{
+	if (globalIsMain) {
+		cerr << "Semantic error: 'return' statement inside 'main' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	if (globalCurrentReturnType != $3.type) {
+		cerr << "Semantic error: incompatible return type ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	Type returnType = globalCurrentReturnType;
+	Type expType = $3.type;
+	string emittedStore = (returnType == INTEGER)?"STORI I":"STORR R";
+	$$.registerNum = $3.registerNum;
+	
+	if (returnType != expType) {
+		if (returnType == INTEGER) {
+			$$.registerNum = globalCurrentScopeRegisterCounter[INTEGER]++;
+			globalQuadBuffer.emit("CRTOI I" + to_string($$.registerNum) + " R" + to_string($3.registerNum));
+		}
+		else {
+			$$.registerNum = globalCurrentScopeRegisterCounter[REAL]++;
+			globalQuadBuffer.emit("CITOR R" + to_string($$.registerNum) + " I" + to_string($3.registerNum));
+		}	
+	}
+	globalQuadBuffer.emit(emittedStore + to_string($$.registerNum) + " I1 -1");
+	globalQuadBuffer.emit("RETRN");
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+WRITE : tk_write tk_leftparen EXP tk_rightparen tk_semicolon
+{
+	if ($3.type == INTEGER) {
+		globalQuadBuffer.emit("PRNTI I" + to_string($3.registerNum));
+	}
+	else {
+		globalQuadBuffer.emit("PRNTR R" + to_string($3.registerNum));
+	}
+}
+| tk_write tk_leftparen tk_str tk_rightparen tk_semicolon
+{
+	// TODO: not sure if the string values should
+	// be stored in a register..
+	for (unsigned int i = 0 ; i < $3.content.length() ; i++) {
+		char c = $3.content[i];
+		if (c == '\\') {
+			if ($3.content[i+1] == 'n') {
+				c = '\n';
+				i++;
+			}
+			else if ($3.content[i+1] == 't') {
+				c = '\t';
+				i++;
+			}
+		}
+		int val = static_cast<int>(c);
+		globalQuadBuffer.emit("PRNTC " + to_string(val));
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+ 
+
+READ : tk_read tk_leftparen LVAL tk_rightparen tk_semicolon
+{
+	string emittedRead = ($3.type == INTEGER)?"READI I":"READR R";
+	string emittedStore = ($3.type == INTEGER)?"STORI I":"STORR R";
+	
+	// allocate a temporary register and assign to it user input:
+	int tempRegister = globalCurrentScopeRegisterCounter[$3.type]++;
+	globalQuadBuffer.emit(emittedRead + to_string(tempRegister));
+	
+	// store the temporary register to memory:
+	globalQuadBuffer.emit(emittedStore + to_string(tempRegister) + " I" + to_string($3.registerNum) + " 0");
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+ASSN : LVAL tk_assign EXP tk_semicolon
+{
+	Type lValType = $1.type, rValType = $3.type;
+	string emittedStore = (lValType == INTEGER)?"STORI I":"STORR R";
+	
+	
+	
+	if (lValType != rValType) {
+		// casting is needed, allocate a temporary register and set it to the casted value:
+		int tempRegister = globalCurrentScopeRegisterCounter[lValType]++;
+		if (lValType == INTEGER) {
+			globalQuadBuffer.emit("CRTOI I" + to_string(tempRegister) + " R" + to_string($3.registerNum));
+		}
+		else {
+			globalQuadBuffer.emit("CITOR R" + to_string(tempRegister) + " I" + to_string($3.registerNum));
+		}
+		
+		// stage 2: assign the temporary register to the memory
+		globalQuadBuffer.emit(emittedStore + to_string(tempRegister) + " I" + to_string($1.registerNum) + " 0");
+	}
+	else {
+		// NO casting. just store:
+		globalQuadBuffer.emit(emittedStore + to_string($3.registerNum) + " I" + to_string($1.registerNum) + " 0");
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+LVAL : tk_identifier
+{
+	// verify that variable is declared in the current scope:
+	map<SymbolName, pSymbol>::iterator itr = globalCurrentScopeSymbolTable.find($1.content);
+	if (itr == globalCurrentScopeSymbolTable.end()) {
+		cerr << "Semantic error: use of undeclared identifier '" << $1.content << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(1);
+	}	
+	// verify identifier is not an array identifer:
+	
+	if (itr->second->isArray()) {
+		cerr << "Semantic error: invalid use of identifier '" << $1.content << "'";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	// if we got here, identifier is okay.
+	
+	$$.type = itr->second->getType();
+	
+	// allocate a register for the memory offset calulation:
+	$$.registerNum = globalCurrentScopeRegisterCounter[INTEGER]++; 
+	$$.offset = itr->second->getOffset();
+	globalQuadBuffer.emit("ADD2I I" + to_string($$.registerNum) + " I1 " + to_string($$.offset));
+}
+| tk_identifier tk_leftbracket EXP tk_rightbracket
+{
+	// verify that variable is declared in the current scope:
+	map<SymbolName, pSymbol>::iterator itr = globalCurrentScopeSymbolTable.find($1.content);
+	if (itr == globalCurrentScopeSymbolTable.end()) {
+		cerr << "Semantic error: use of undeclared identifier '" << $1.content << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	// verify identifier is indeed an array identifer
+	// and that there is no exception
+	
+	if (itr->second->isArray() == false) {
+		cerr << "Semantic error: invalid use of identifier '" << $1.content << "'";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	// verify that EXP.type is INTEGER:
+	if ($3.type != INTEGER) {
+		cerr << "Semantic error: use of real type to represent array index ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	$$.type = itr->second->getType();
+	
+	// emit a code that checks array index (found in $3 register). if it is not ok,
+	// we shall call the function __exception_array_check;
+	int conditionRegister = globalCurrentScopeRegisterCounter[INTEGER]++;
+	int falseLabel = globalQuadBuffer.nextQuad() + 6;
+	int trueLabel = globalQuadBuffer.nextQuad() + 5;
+	// if index < 0 set conditionRegister = 1 else 0.
+	globalQuadBuffer.emit("SLETI I" + to_string(conditionRegister) + " I" + to_string($3.registerNum) + " 0");
+	globalQuadBuffer.emit("BNEQZ I" + to_string(conditionRegister) + " " + to_string(trueLabel)); // go to call
+	
+	// if index > maxIndex set conditionRegister = 1 else 0.
+	string maxIndex = to_string(itr->second->getSize()-1);
+	globalQuadBuffer.emit("SGRTI I" + to_string(conditionRegister) + " I" + to_string($3.registerNum) + " " + maxIndex);
+	globalQuadBuffer.emit("BREQZ I" + to_string(conditionRegister) + " " + to_string(falseLabel));  // skip call to exception
+	
+	// call __exception_array_check:
+	// no need to save all registers to memory:
+	// no function parameters
+	// no need to update I2 to the current memory size.
+
+	// set I1 = I2 for the upcoming call. the function will set I2 according to number of declarations.
+	globalQuadBuffer.emit("COPYI I1 I2");
+	
+	// perform JUMP and LINK:
+	int functionStartLine = globalFunctionsMap["__exception_array_check"]->getStartLine(); // -1
+	globalFunctionsMap["__exception_array_check"]->addCallLine(globalQuadBuffer.nextQuad());
+	globalQuadBuffer.emit("JLINK " + to_string(functionStartLine));
+	
+	// function does no return. do nothing more.
+	
+	// allocate a register for the memory offset calulation:
+	$$.registerNum = globalCurrentScopeRegisterCounter[INTEGER]++;
+	
+	// if no exception, branch skips here:
+	
+	// calculate offset: I1 + offset + index;
+	$$.offset = itr->second->getOffset();
+	globalQuadBuffer.emit("ADD2I I" + to_string($$.registerNum) + " I1 " + to_string($$.offset));
+	globalQuadBuffer.emit("ADD2I I" + to_string($$.registerNum) + " I1 I" + to_string($3.registerNum));
+	
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+
+CNTRL : tk_if BEXP tk_then M STMT tk_else N M STMT
+{
+	globalQuadBuffer.backpatch($2.trueList,$4.quad);
+	globalQuadBuffer.backpatch($2.falseList,$8.quad);
+	// N emits the jump that skip the rest of the commands
+	$$.nextList = merge<int>($5.nextList, $7.nextList); 
+	$$.nextList = merge<int>($$.nextList, $9.nextList);
+}
+| tk_if BEXP tk_then M STMT
+{
+	globalQuadBuffer.backpatch($2.trueList,$4.quad);
+	$$.nextList = merge<int>($2.falseList, $5.nextList);
+}
+| tk_while M BEXP tk_do M STMT
+{
+	globalQuadBuffer.backpatch($3.trueList,$5.quad);
+	globalQuadBuffer.backpatch($6.nextList,$2.quad);
+	$$.nextList = $3.falseList;
+	globalQuadBuffer.emit("UJUMP " + to_string($2.quad));
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+BEXP : BEXP tk_or M BEXP
+{
+	globalQuadBuffer.backpatch($1.falseList,$3.quad);
+	$$.trueList = merge<int>($1.trueList, $4.trueList);
+	$$.falseList = $4.falseList;
+}
+| BEXP tk_and M BEXP
+{
+	globalQuadBuffer.backpatch($1.trueList,$3.quad);
+	$$.falseList = merge<int>($1.falseList, $4.falseList);
+	$$.trueList = $4.trueList;
+}
+| tk_not BEXP
+{
+	$$.trueList = $2.falseList;
+	$$.falseList = $2.trueList;
+}
+| EXP tk_relop EXP
+{
+	//--------------------------------------------------------------------------------------------------	
+	int leftRegister = $1.registerNum;
+	int rightRegister = $3.registerNum;
+	string T;
+	
+	if ($1.type == REAL || $3.type == REAL ) {
+		T = "R";
+		// perform casting if needed:
+		if ($1.type == INTEGER) {
+			leftRegister = globalCurrentScopeRegisterCounter[REAL]++;
+			globalQuadBuffer.emit("CITOR R" + to_string(leftRegister) + " I" + to_string($1.registerNum));
+		}
+		else if ($3.type == INTEGER) {
+			rightRegister = globalCurrentScopeRegisterCounter[REAL]++;
+			globalQuadBuffer.emit("CITOR R" + to_string(rightRegister) + " I" + to_string($3.registerNum));
+		}
+	}
+	else {
+		T = "I";
+	}
+	$$.registerNum = globalCurrentScopeRegisterCounter[INTEGER]++;
+	//--------------------------------------------------------------------------------------------------
+	
+	
+	
+	// we will now emit 3 commands
+	// the first one will set the register to true (1) or false (0) according
+	// to the relop.
+	// the second (UJUMP) will jump to the true label.
+	// the third (BREQZ) will perform the jump to the false label if the condition is false.
+	
+	
+	$$.falseList.push_back(globalQuadBuffer.nextQuad() + 1); // set UJUMP for backpatch
+	$$.trueList.push_back(globalQuadBuffer.nextQuad() + 2); // set BNEQZ for backpatch 
+	
+	
+	if ($2.content == "==") {
+		globalQuadBuffer.emit("SEQU" + T + " I" + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+		globalQuadBuffer.emit("BREQZ I" + to_string($$.registerNum) + " ");
+	} 
+	else if ($2.content == "<>") {
+		globalQuadBuffer.emit("SNEQ" + T + " I" + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+		globalQuadBuffer.emit("BREQZ I" + to_string($$.registerNum) + " ");
+	} 
+	else if ($2.content ==  "<=" ) {
+		// same as if !(left > right)
+		globalQuadBuffer.emit("SGRT" + T + " I" + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+		globalQuadBuffer.emit("BNEQZ I" + to_string($$.registerNum) + " ");
+	}
+	else if ($2.content ==  "<") {
+		globalQuadBuffer.emit("SLET" + T + " I" + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+		globalQuadBuffer.emit("BREQZ I" + to_string($$.registerNum) + " ");
+	} 
+	else if ($2.content == ">=") {
+		// same as if !(left < right)
+		globalQuadBuffer.emit("SLET" + T + " I" + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+		globalQuadBuffer.emit("BNEQZ I" + to_string($$.registerNum) + " ");
+	} 
+	else if ($2.content == ">") {
+		globalQuadBuffer.emit("SGRT" + T + " I" + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+		globalQuadBuffer.emit("BREQZ I" + to_string($$.registerNum) + " ");
+	}
+	globalQuadBuffer.emit("UJUMP ");
+}
+| tk_leftparen BEXP tk_rightparen
+{
+	$$.trueList = $2.trueList;
+	$$.falseList = $2.falseList;
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+EXP : EXP tk_addop EXP
+{
+	int leftRegister = $1.registerNum;
+	int rightRegister = $3.registerNum;
+	
+	if ($1.type == REAL || $3.type == REAL ) {
+		$$.type = REAL;
+		
+		// perform casting if needed:
+		if ($1.type == INTEGER) {
+			leftRegister = globalCurrentScopeRegisterCounter[REAL]++;
+			globalQuadBuffer.emit("CITOR R" + to_string(leftRegister) + " I" + to_string($1.registerNum));
+		}
+		else if ($3.type == INTEGER) {
+			rightRegister = globalCurrentScopeRegisterCounter[REAL]++;
+			globalQuadBuffer.emit("CITOR R" + to_string(rightRegister) + " I" + to_string($3.registerNum));
+		}
+	}
+	else {
+		// both operands are INTEGERS
+		$$.type = INTEGER;
+	}
+	string T = ($$.type == INTEGER)?"I":"R";
+	$$.registerNum = globalCurrentScopeRegisterCounter[$$.type]++;
+	
+	
+	if ($2.content == "+") {
+		globalQuadBuffer.emit("ADD2" + T + " " + T + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+	} 
+	else {
+		globalQuadBuffer.emit("SUBT" + T + " " + T + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+	}	
+}
+| EXP tk_mulop EXP
+{	
+	int leftRegister = $1.registerNum;
+	int rightRegister = $3.registerNum;
+	
+	
+	if ($1.type == REAL || $3.type == REAL ) {
+		$$.type = REAL;
+		
+		// perform casting if needed:
+		if ($1.type == INTEGER) {
+			leftRegister = globalCurrentScopeRegisterCounter[REAL]++;
+			globalQuadBuffer.emit("CITOR R" + to_string(leftRegister) + " I" + to_string($1.registerNum));
+		}
+		else if ($3.type == INTEGER) {
+			rightRegister = globalCurrentScopeRegisterCounter[REAL]++;
+			globalQuadBuffer.emit("CITOR R" + to_string(rightRegister) + " I" + to_string($3.registerNum));
+		}
+	}
+	else {
+		// both operands are INTEGERS
+		$$.type = INTEGER;
+	}
+	string T = ($$.type == INTEGER)?"I":"R";
+	$$.registerNum = globalCurrentScopeRegisterCounter[$$.type]++;
+	
+	
+	if ($2.content == "*") {
+		globalQuadBuffer.emit("MULT" + T + " " + T + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+	} 
+	else {
+		globalQuadBuffer.emit("DIVD" + T + " " + T + to_string($$.registerNum) + " " + T + to_string(leftRegister) + " " + T + to_string(rightRegister));
+	}		                                               
+}
+| tk_leftparen EXP tk_rightparen
+{
+	$$ = $2;
+}
+| tk_identifier
+{
+	// verify that variable is declared in the current scope:
+	map<SymbolName, pSymbol>::iterator itr = globalCurrentScopeSymbolTable.find($1.content);
+	if (itr == globalCurrentScopeSymbolTable.end()) {
+		cerr << "Semantic error: use of undeclared identifier '" << $1.content << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+		
+	// verify identifier is not an array identifer:
+	if (itr->second->isArray()) {
+		cerr << "Semantic error: invalid use of identifier '" << $1.content << "'";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	// type of EXP :
+	$$.type = itr->second->getType();
+	string emmittedLoad = ($$.type == INTEGER)?"LOADI I":"LOADR R";
+	
+	// allocate a register for the EXP value:
+	$$.registerNum = globalCurrentScopeRegisterCounter[$$.type]++;
+	
+	// offset in memory: prepare for LOAD:
+	$$.offset = itr->second->getOffset();
+	
+	globalQuadBuffer.emit(emmittedLoad + to_string($$.registerNum) + " I1 " + to_string($$.offset));
+}
+| tk_identifier tk_leftbracket EXP tk_rightbracket
+{
+	// verify that variable is declared in the current scope:
+	map<SymbolName, pSymbol>::iterator itr = globalCurrentScopeSymbolTable.find($1.content);
+	if (itr == globalCurrentScopeSymbolTable.end()) {
+		cerr << "Semantic error: use of undeclared identifier '" << $1.content << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+		
+	// verify identifier is an array identifer:
+	if (!(itr->second->isArray())) {
+		cerr << "Semantic error: invalid use of identifier '" << $1.content << "'";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	// verify that EXP.type is INTEGER:
+	if ($3.type != INTEGER) {
+		cerr << "Semantic error: use of real type to represent array index ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// emit a code that checks array index (found in $3 register). if it is not ok,
+	// we shall call the function __exception_array_check;
+	int conditionRegister = globalCurrentScopeRegisterCounter[INTEGER]++;
+	int falseLabel = globalQuadBuffer.nextQuad() + 6;
+	int trueLabel = globalQuadBuffer.nextQuad() + 5;
+	
+	// if index < 0 set conditionRegister = 1 else 0.
+	globalQuadBuffer.emit("SLETI I" + to_string(conditionRegister) + " I" + to_string($3.registerNum) + " 0");
+	globalQuadBuffer.emit("BNEQZ I" + to_string(conditionRegister) + " " + to_string(trueLabel)); // go to call
+	
+	// if index > maxIndex set conditionRegister = 1 else 0.
+	string maxIndex = to_string(itr->second->getSize()-1);
+	globalQuadBuffer.emit("SGRTI I" + to_string(conditionRegister) + " I" + to_string($3.registerNum) + " " + maxIndex);
+	globalQuadBuffer.emit("BREQZ I" + to_string(conditionRegister) + " " + to_string(falseLabel));  // skip call to exception
+	
+	// call __exception_array_check:
+	// no need to save all registers to memory:
+	// no function parameters
+	// no need to update I2 to the current memory size.
+
+	// set I1 = I2 for the upcoming call. the function will set I2 according to number of declarations.
+	globalQuadBuffer.emit("COPYI I1 I2");
+	
+	// perform JUMP and LINK:
+	int functionStartLine = globalFunctionsMap["__exception_array_check"]->getStartLine(); // -1
+	globalFunctionsMap["__exception_array_check"]->addCallLine(globalQuadBuffer.nextQuad());
+	globalQuadBuffer.emit("JLINK " + to_string(functionStartLine));
+	
+	// function does not return. do nothing more.
+	// if no exception, branch skips here:
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	// allocate a register for the memory offset calulation:
+	int offsetReg = globalCurrentScopeRegisterCounter[INTEGER]++;
+	
+	// calculate offset: I1 + offset + index;
+	$$.offset = itr->second->getOffset();
+	globalQuadBuffer.emit("ADD2I I" + to_string(offsetReg) + " I1 " + to_string($$.offset));
+	globalQuadBuffer.emit("ADD2I I" + to_string(offsetReg) + " I1 I" + to_string($3.registerNum));
+	
+	// type of EXP :
+	$$.type = itr->second->getType();
+	string emittedLoad = ($$.type == INTEGER)?"LOADI I":"LOADR R";
+	
+	// allocate a register for the EXP value:
+	$$.registerNum = globalCurrentScopeRegisterCounter[$$.type]++;
+	
+	globalQuadBuffer.emit(emittedLoad + to_string($$.registerNum) + " I1 I" + to_string(offsetReg));
+}
+| tk_num
+{
+	if ($1.content.find('.') != $1.content.npos) {
+		$$.type = REAL;
+	}
+	else {
+		$$.type = INTEGER;
+	}
+	$$.registerNum = globalCurrentScopeRegisterCounter[$$.type]++;
+	
+	if ($$.type == REAL) {
+		globalQuadBuffer.emit("COPYR R" + to_string($$.registerNum) + " " + $1.content);
+	}
+	else {
+		globalQuadBuffer.emit("COPYI I" + to_string($$.registerNum) + " " + $1.content);
+	}
+}
+| CALL
+{
+	$$.type = $1.type;
+	$$.registerNum = $1.registerNum;
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////            FUNCTION CALL                      /////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+CALL : tk_call tk_identifier tk_leftparen CALL_ARGS_FULL tk_rightparen
+{
+	
+	string functionName = $2.content;
+	
+	// if function is not found in the Function Map, then it is not declared:
+	std::map<FunctionName,pFunction>::iterator itr = globalFunctionsMap.find(functionName);
+	if (itr == globalFunctionsMap.end()) {
+		cerr << "Semantic error: use of undeclared function '" << functionName << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	if ((itr->second->getParamTypes()).size() != $4.paramRegisters.size()) {
+		cerr << "Semantic error: invalid number of argument of function '" << functionName << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	// save all INTEGER registers to memory:
+	
+	unsigned int offset = 0;
+	
+	for (int i = 0 ; i < globalCurrentScopeRegisterCounter[INTEGER] ; i++) {
+		globalQuadBuffer.emit("STORI I" + to_string(i) + " I2 " + to_string(offset++));
+	}
+	// save all REAL registers to memory:
+	
+	for (int j = 0 ; j < globalCurrentScopeRegisterCounter[REAL] ; j++) {
+		globalQuadBuffer.emit("STORR R" + to_string(j) + " I2 " + to_string(offset++));
+	}
+	
+	// save function parameters to memory. perform casting if needed:
+	
+	vector<Type> functionParamTypes(itr->second->getParamTypes());
+	while ($4.paramRegisters.size() > 0) {
+		Type requiredType = functionParamTypes.back();
+		functionParamTypes.pop_back();
+		Type givenType = $4.paramTypes.back();
+		$4.paramTypes.pop_back();
+		int paramRegNum = $4.paramRegisters.back();
+		$4.paramRegisters.pop_back();
+		
+		if (requiredType != givenType) {
+			int castedRegNum = globalCurrentScopeRegisterCounter[requiredType]++;
+			if (requiredType == INTEGER) {
+				globalQuadBuffer.emit("CRTOI I" + to_string(castedRegNum) + " R" +to_string(paramRegNum));
+			}
+			else {
+				globalQuadBuffer.emit("CITOR R" + to_string(castedRegNum) + " I" +to_string(paramRegNum));
+			}
+			paramRegNum = castedRegNum;
+		}
+		if (requiredType == INTEGER) {
+			globalQuadBuffer.emit("STORI I" + to_string(paramRegNum) + " I2 " + to_string(offset++));
+		}
+		else {
+			globalQuadBuffer.emit("STORR R" + to_string(paramRegNum) + " I2 " + to_string(offset++));
+		}
+		
+	}
+	
+	// update I2 to the current memory size. update global offset.
+	globalQuadBuffer.emit("ADD2I I2 I2 " + to_string(++offset));
+	globalCurrentScopeOffset += offset;
+	
+	// set I1 = I2 for the upcoming call. the function will set I2 according to number of declarations.
+	globalQuadBuffer.emit("COPYI I1 I2");
+	
+	// perform JUMP and LINK:
+	
+	int functionStartLine = globalFunctionsMap[functionName]->getStartLine();
+	if (functionStartLine == -1) {
+		globalFunctionsMap[functionName]->addCallLine(globalQuadBuffer.nextQuad());
+	}
+	globalQuadBuffer.emit("JLINK " + to_string(functionStartLine));
+	
+	// back from function, set the stack frame I2 = I1;
+	globalQuadBuffer.emit("COPYI I2 I1");
+	
+	// set the return value to a register:
+	$$.type = globalFunctionsMap[functionName]->getReturnType();
+	$$.registerNum = globalCurrentScopeRegisterCounter[$$.type];
+	// do not increment because we still need to load all the saved registers.
+	string emittedLoad = ($$.type == INTEGER) ? "LOADI I" : "LOADR R";
+	globalQuadBuffer.emit(emittedLoad + to_string($$.registerNum) + " I2 -1");
+	
+	
+	globalQuadBuffer.emit("SUBTI I2 I2 " + to_string(offset) );
+	
+	
+	// restore all INTEGER registers to memory:
+	
+	offset = 0;
+	
+	for (int i = 0 ; i < globalCurrentScopeRegisterCounter[INTEGER] ; i++) {
+		if (i == 2) {
+			offset++;
+			continue;
+		}
+		globalQuadBuffer.emit("LOADI I" + to_string(i) + " I2 " + to_string(offset++));
+	}
+	// restore all REAL registers to memory:
+	
+	for (int j = 0 ; j < globalCurrentScopeRegisterCounter[REAL] ; j++) {
+		globalQuadBuffer.emit("LOADR R" + to_string(j) + " I2 " + to_string(offset++));
+	}
+	globalCurrentScopeRegisterCounter[$$.type]++;
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+CALL_ARGS_FULL : CALL_ARGS
+{
+	
+	$$.paramRegisters = $1.paramRegisters;
+	$$.paramTypes = $1.paramTypes;
+	$1.paramTypes.clear();
+	$1.paramRegisters.clear();
+	
+}
+| /* EPSILON */
+{
+	
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+CALL_ARGS : EXP
+{
+	$$.paramRegisters.push_back($1.registerNum);
+	$$.paramTypes.push_back($1.type);
+}
+| CALL_ARGS tk_comma EXP
+{
+	$$.paramRegisters = $1.paramRegisters;
+	$$.paramTypes = $1.paramTypes;
+	$1.paramTypes.clear();
+	$1.paramRegisters.clear();
+	
+	$$.paramRegisters.push_back($3.registerNum);
+	$$.paramTypes.push_back($3.type);
+}
+
+/////////////////////////////////////////////////////////////////////////
+///////////////////////    MARKERS    ///////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+// Dragon Book Page 505:
+// the N marker is used to emit the "goto"
+// after the code in an if EXP then M STMT N else M STMT 
+
+M : /* epsilon */ 
+{
+	$$.quad = globalQuadBuffer.nextQuad();
+}
+
+N : /* epsilon */ 
+{
+	// This marker is activated to create a jump such
+	// as the first 'jump to main' in the code
+	
+	// stage 1 : set the nextList for the upcoming emit
+	$$.nextList.push_back(globalQuadBuffer.nextQuad());
+	
+	// stage 2 : emit the command
+	globalQuadBuffer.emit("UJUMP ");
+	
+	// this next list will be backpatched when we reduce.
+	// example, when reducing to PROGRAM it will be
+	// backpatched to the line between FUNCTION and MAIN_FUNCTION
+}
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+%%
+
+void yyerror(const char* c)
+{
+	cerr << "Syntax error: '" << yytext << "' in line number " << yylineno << endl;
+	exit(EXIT_SYNTAX_FAILURE);
+}
+
