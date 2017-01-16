@@ -24,7 +24,7 @@ public:
 	// Performs the backpathing action from the lines numbers counted from zero
 	// input: topatch_list vector of line numbers that need patching
 	//        address data to attach
-	void Buffer::backpatch(vector<int> lineNums , int address){}
+	void Buffer::backpatch(vector<int> lineNums , int address);
 
 	//prints all buffer lines
 	void print();

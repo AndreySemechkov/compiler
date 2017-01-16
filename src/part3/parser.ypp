@@ -1,4 +1,4 @@
-% {
+%{
 	/* Project part 2 - Bison file */
 
 	/**********************************************************************************
@@ -19,7 +19,6 @@
 //We create the parser nodes for each token in the lexical analyser. 
 //Using yylval common data structure we transfer the nodes to the parser unit. 
 //In the parser we only create the father node, connect the nodes and build the tree.
-
 	/**********************************************************************************
 	 *                                   Function Declarations
 	 ***********************************************************************************/
@@ -27,7 +26,7 @@
 	extern char* yytext;
 	extern int yylineno;
 	void yyerror(const char* msg);
-	%}
+%}
 
 /**********************************************************************************
  *                                   Tokens
@@ -110,18 +109,8 @@ PROGRAM: TDEFS FDEFS MAIN_FUNCTION
 
 TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 {
-	/*concatenate all children to a list*/
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$1.node = concatList($1.node,$6.node);
-	$1.node = concatList($1.node,$7.node);
-	/*Now, make the father node*/
-	$$.node = makeNode("TDEFS",NULL,$1.node);
-
 }
-| /*epsilon*/{$$.node = makeNode("TDEFS",NULL, makeNode("EPSILON",NULL,NULL));}
+| /*epsilon*/
 ;
 
 /**********************************************************************************
@@ -130,17 +119,6 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 
 FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')' BLK {
 
-	/*concatenate all children to a list*/
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$1.node = concatList($1.node,$6.node);
-	$1.node = concatList($1.node,$7.node);
-	/*Now, make the father node*/
-	$$.node = makeNode("FDEFS",NULL,$1.node);
-
-}
 | FDEFS TK_extern TYPE TK_id '(' FUNC_ARGLIST_FULL ')' ';' {
 	/*concatenate all children to a list*/
 	$1.node = concatList($1.node,$2.node);
@@ -259,18 +237,18 @@ TYPE: TK_integer {$$.node = makeNode("TYPE",NULL, $1.node);}
 
 LIST: LIST STMT {$1.node = concatList($1.node,$2.node);
 	$$.node = makeNode("LIST",NULL, $1.node);}
-| /*epsilon*/{$$.node = makeNode("LIST",NULL, makeNode("EPSILON",NULL,NULL));}
+| /*epsilon*/
 ;
 /**********************************************************************************
  *                        PROGRAM
  ***********************************************************************************/
 
-STMT: ASSN {$$.node = makeNode("STMT",NULL, $1.node);}
-| CNTRL {$$.node = makeNode("STMT",NULL, $1.node);}
-| READ {$$.node = makeNode("STMT",NULL, $1.node);}
-| WRITE {$$.node = makeNode("STMT",NULL, $1.node);}
-| STMT_RETURN {$$.node = makeNode("STMT",NULL, $1.node);}
-| BLK {$$.node = makeNode("STMT",NULL, $1.node);}
+STMT: ASSN 
+| CNTRL 
+| READ 
+| WRITE 
+| STMT_RETURN 
+| BLK 
 ;
 /**********************************************************************************
  *                        PROGRAM
@@ -417,7 +395,7 @@ EXP: EXP TK_addop EXP {
 		$$.type = REAL;
 	} else if($1.type = INT) {
 		$$.type = INT;
-	}else{
+	} else {
 		//semantic error
 		cerr << "Semantic error:"
 		<< " EXP TK_addop EXP expecting types: REAL or INT "
@@ -437,187 +415,186 @@ EXP: EXP TK_addop EXP {
 	else { // "-"
 		buffer.emit("SUBT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
 	}
+}
+| EXP TK_mulop EXP {
 
-	| EXP TK_mulop EXP {
+	int leftRegister = $1.registerNum;
+	int rightRegister = $3.registerNum;
 
-		int leftRegister = $1.registerNum;
-		int rightRegister = $3.registerNum;
-
-		//check types
-		if($1.type != $3.type) { //different types
-			//erorr
-			cerr << "Semantic error:"
-			<< " differnt types, EXP*EXP"
-			<< " in line number " << to_string(yylineno) << endl;
-			exit(EXIT_SEMANTIC_FAILURE);
-		}
-		//set my type
-		if($1.type == REAL) {
-			$$.type = REAL;
-		} else if($1.type = INT) {
-			$$.type = INT;
-		}else{
-			//semantic error
-			cerr << "Semantic error:"
-			<< " EXP TK_mulop EXP expecting types: REAL or INT "
-			<< " in line number " << to_string(yylineno) << endl;
-			exit(EXIT_SEMANTIC_FAILURE);
-		
-		}
-		//EMIT
-
-		string myType = ($$.type == REAL) ? "R" : "I";
-
-		$$.registerNum = bank.getRegister($$.type).;
-
-		if ($2.value == "*") {
-			buffer.emit("MULT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
-		}
-		else { // "/"
-			buffer.emit("DIVD" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
-		}
+	//check types
+	if($1.type != $3.type) { //different types
+		//erorr
+		cerr << "Semantic error:"
+		<< " differnt types, EXP*EXP"
+		<< " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	//set my type
+	if($1.type == REAL) {
+		$$.type = REAL;
+	} else if($1.type = INT) {
+		$$.type = INT;
+	} else {
+		//semantic error
+		cerr << "Semantic error:"
+		<< " EXP TK_mulop EXP expecting types: REAL or INT "
+		<< " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
 
 	}
-	| '(' EXP ')' {
+	//EMIT
 
-		$$ = $2
+	string myType = ($$.type == REAL) ? "R" : "I";
+
+	$$.registerNum = bank.getRegister($$.type).;
+
+	if ($2.value == "*") {
+		buffer.emit("MULT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
 	}
-	| '(' TYPE ')' EXP {
-		// Explicit casting: int to real and real to int. all other casting options are semantics errors.
+	else { // "/"
+		buffer.emit("DIVD" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+	}
 
-		if($2.type == REAL) {
+}
+| '(' EXP ')' {
 
-			if ($4.type == INT) {
-				// TYPE the actual type is a string in .type field
-				$$.type = $2.type; //REAL
-				
-				//get register
-				$$.registerNum = bank.getRegister($$.type);
-				
-				//emit
-				buffer.emit("CITOR R" + to_string($$.registerNum) + " I" + to_string($4.registerNum));
-				
-			} else {
-				//semantic error
-				cerr << "Semantic error:"
-				<< " '(' TYPE ')' EXP expecting different types"
-				<< " in line number " << to_string(yylineno) << endl;
-				exit(EXIT_SEMANTIC_FAILURE);
-			}
+	$$ = $2
+}
+| '(' TYPE ')' EXP {
+	// Explicit casting: int to real and real to int. all other casting options are semantics errors.
 
-		} else if($2.type == INT) {
+	if($2.type == REAL) {
 
-			if ($4.type == REAL) {
-				// TYPE the actual type is a string in .type field
-				$$.type = $2.type; //INT
-				
-				//get register
-				$$.registerNum = bank.getRegister($$.type);
-						
-				// emit
-				buffer.emit("CRTOI I" + to_string($$.registerNum) + " R" + to_string($4.registerNum));
-				
-							
-			} else {
-				//semantic error
-				cerr << "Semantic error:"
-				<< " '(' TYPE ')' EXP expecting different types"
-				<< " in line number " << to_string(yylineno) << endl;
-				exit(EXIT_SEMANTIC_FAILURE);
-			}
+		if ($4.type == INT) {
+			// TYPE the actual type is a string in .type field
+			$$.type = $2.type;//REAL
+
+			//get register
+			$$.registerNum = bank.getRegister($$.type);
+
+			//emit
+			buffer.emit("CITOR R" + to_string($$.registerNum) + " I" + to_string($4.registerNum));
+
 		} else {
-
 			//semantic error
 			cerr << "Semantic error:"
-			<< " '(' TYPE ')' EXP types should be INT or REAL"
+			<< " '(' TYPE ')' EXP expecting different types"
 			<< " in line number " << to_string(yylineno) << endl;
 			exit(EXIT_SEMANTIC_FAILURE);
 		}
-	}
-	| TK_id {
-		$$.node = makeNode("EXP",NULL,$1.node);
-	}
-	| STREF {
 
-	}
-	| TK_num {
-		//deterine value
-		if ($1.value.find('.') != $1.value.npos) {
-			$$.type = REAL;
+	} else if($2.type == INT) {
+
+		if ($4.type == REAL) {
+			// TYPE the actual type is a string in .type field
+			$$.type = $2.type;//INT
+
+			//get register
+			$$.registerNum = bank.getRegister($$.type);
+
+			// emit
+			buffer.emit("CRTOI I" + to_string($$.registerNum) + " R" + to_string($4.registerNum));
+
+		} else {
+			//semantic error
+			cerr << "Semantic error:"
+			<< " '(' TYPE ')' EXP expecting different types"
+			<< " in line number " << to_string(yylineno) << endl;
+			exit(EXIT_SEMANTIC_FAILURE);
 		}
-		else {
-			$$.type = INT;
-		}
-		//ger register
-		$$.registerNum = bank.getRegister($$.type);
-		
-		//emit
-		if ($$.type == REAL) { //real
-			buffer.emit("COPYR R" + to_string($$.registerNum) + " " + $1.value);
-		}
-		else { //int
-			buffer.emit("COPYI I" + to_string($$.registerNum) + " " + $1.value);
-		}
-		
-	}
-	| CALL {
-		$$.node = makeNode("EXP",NULL,$1.node);
-	}
-	;
-	/**********************************************************************************
-	 *                        PROGRAM
-	 ***********************************************************************************/
+	} else {
 
-	STREF: TK_id '[' TK_id ']' {
-		$1.node = concatList($1.node,$2.node);
-		$1.node = concatList($1.node,$3.node);
-		$1.node = concatList($1.node,$4.node);
-		$$.node = makeNode("STREF",NULL,$1.node);
-
+		//semantic error
+		cerr << "Semantic error:"
+		<< " '(' TYPE ')' EXP types should be INT or REAL"
+		<< " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
 	}
-	| STREF '[' TK_id ']' {
-		$1.node = concatList($1.node,$2.node);
-		$1.node = concatList($1.node,$3.node);
-		$1.node = concatList($1.node,$4.node);
-		$$.node = makeNode("STREF",NULL,$1.node);
-	}
-	;
-	/**********************************************************************************
-	 *                        PROGRAM
-	 ***********************************************************************************/
+}
+| TK_id {
+	$$.node = makeNode("EXP",NULL,$1.node);
+}
+| STREF {
 
-	CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
-		$1.node = concatList($1.node,$2.node);
-		$1.node = concatList($1.node,$3.node);
-		$1.node = concatList($1.node,$4.node);
-		$1.node = concatList($1.node,$5.node);
-		$$.node = makeNode("CALL",NULL,$1.node);
+}
+| TK_num {
+	//deterine value
+	if ($1.value.find('.') != $1.value.npos) {
+		$$.type = REAL;
 	}
-	;
-
-	CALL_ARGS_FULL: CALL_ARGS {
-		$$.node = makeNode("CALL_ARGS_FULL",NULL, $1.node);
+	else {
+		$$.type = INT;
 	}
-	| /*epsilon*/{$$.node = makeNode("CALL_ARGS_FULL",NULL, makeNode("EPSILON",NULL,NULL));}
-	;
+	//ger register
+	$$.registerNum = bank.getRegister($$.type);
 
-	CALL_ARGS: EXP {$$.node = makeNode("CALL_ARGS",NULL, $1.node);}
-	| CALL_ARGS ',' EXP {
-		$1.node = concatList($1.node,$2.node);
-		$1.node = concatList($1.node,$3.node);
-		$$.node = makeNode("CALL_ARGS",NULL, $1.node);
+	//emit
+	if ($$.type == REAL) { //real
+		buffer.emit("COPYR R" + to_string($$.registerNum) + " " + $1.value);
 	}
-	;
-	/**********************************************************************************
-	 *                        PROGRAM
-	 ***********************************************************************************/
+	else { //int
+		buffer.emit("COPYI I" + to_string($$.registerNum) + " " + $1.value);
+	}
 
-	%%
+}
+| CALL {
+	$$.node = makeNode("EXP",NULL,$1.node);
+}
+;
+/**********************************************************************************
+ *                        PROGRAM
+ ***********************************************************************************/
+
+STREF: TK_id '[' TK_id ']' {
+	$1.node = concatList($1.node,$2.node);
+	$1.node = concatList($1.node,$3.node);
+	$1.node = concatList($1.node,$4.node);
+	$$.node = makeNode("STREF",NULL,$1.node);
+
+}
+| STREF '[' TK_id ']' {
+	$1.node = concatList($1.node,$2.node);
+	$1.node = concatList($1.node,$3.node);
+	$1.node = concatList($1.node,$4.node);
+	$$.node = makeNode("STREF",NULL,$1.node);
+}
+;
+/**********************************************************************************
+ *                        PROGRAM
+ ***********************************************************************************/
+
+CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
+	$1.node = concatList($1.node,$2.node);
+	$1.node = concatList($1.node,$3.node);
+	$1.node = concatList($1.node,$4.node);
+	$1.node = concatList($1.node,$5.node);
+	$$.node = makeNode("CALL",NULL,$1.node);
+}
+;
+
+CALL_ARGS_FULL: CALL_ARGS {
+	$$.node = makeNode("CALL_ARGS_FULL",NULL, $1.node);
+}
+| /*epsilon*/{$$.node = makeNode("CALL_ARGS_FULL",NULL, makeNode("EPSILON",NULL,NULL));}
+;
+
+CALL_ARGS: EXP {$$.node = makeNode("CALL_ARGS",NULL, $1.node);}
+| CALL_ARGS ',' EXP {
+	$1.node = concatList($1.node,$2.node);
+	$1.node = concatList($1.node,$3.node);
+	$$.node = makeNode("CALL_ARGS",NULL, $1.node);
+}
+;
+/**********************************************************************************
+ *                        PROGRAM
+ ***********************************************************************************/
+
+%%
 
 // printig an error when no reduction rule can be applied.code 2 of error as requested showind the syntax error details
-	void yyerror(const char* msg)
-	{
-		printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
-		exit(EXIT_SYNTAX_FAILURE);
-	}
+void yyerror(const char* msg)
+{
+	printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
+	exit(EXIT_SYNTAX_FAILURE);
+}
 

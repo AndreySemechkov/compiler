@@ -1,16 +1,16 @@
-# Makefile for Project part 2
-all: part2
+# Makefile for Project part 3
+all: part3
 
-part2.tab.c part2.tab.h:	part2_bison.y
-	bison -d part2_bison.y
+parser.tab.cpp parser.tab.hpp: parser.ypp
+	bison -d parser.ypp
 
-lex.yy.c: part2_lex.lex part2.tab.h
-	flex part2_lex.lex
+lex.yy.c: scanner.lex parser.tab.hpp
+	flex scanner.lex
 
-part2: lex.yy.c part2.tab.c part2.tab.h part2_helpers.c part2_helpers.h
-	gcc -o part2 part2_bison.tab.c lex.yy.c part2_helpers.c part2_helpers.h
+part3: lex.yy.c parser.tab.cpp parser.tab.hpp common.cpp common.hpp buffer.hpp buffer.cpp registersBank.hpp registersBank.cpp  
+	g++ -std=c++11 -o part3 parser.tab.cpp lex.yy.c common.cpp buffer.cpp registersBank.cpp
 
 clean:
-	rm part2 part2_bison.tab.c lex.yy.c part2_bison.tab.h
+	rm part3 parser.tab.cpp lex.yy.c parser.tab.hpp
 
 
