@@ -8,7 +8,7 @@
 #include <string>
 #include <iostream>
 #include <stdio.h>
-
+#include "registersBank.hpp"
 
 #define EXIT_LEXICAL_FAILURE 1
 #define EXIT_SYNTAX_FAILURE 2
@@ -24,8 +24,6 @@ extern "C" {
 } // extern "C"
 #endif
 */
-
-typedef enum { REAL, INT, NONE } t_type ;
 
 
 /* common struct to use for bison and flex*/

@@ -2,8 +2,6 @@
 /* part2_helpers.c - Helper functions for project part 2 - implementation  */
 #include "common.hpp"
 
-#include <stdio.h>
-
 
 extern int yyparse (void);
 
@@ -13,6 +11,7 @@ extern int yyparse (void);
 /**************************************************************************/
 
 Buffer buffer;
+RegistersBank bank;
 
 
 /**************************************************************************/
