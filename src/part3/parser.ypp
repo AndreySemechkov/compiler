@@ -8,10 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "common.hpp"
-#include "parser.tab.hpp"
-	
-		using namespace std;
-
+#include "parser.tab.hpp"	
+using namespace std;
 ParserNode* parseTree;
 /**********************************************************************************
 *                                   Header
