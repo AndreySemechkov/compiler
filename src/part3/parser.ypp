@@ -1,4 +1,4 @@
-%{
+% {
 	/* Project part 3 - Bison file */
 
 	/**********************************************************************************
@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "common.hpp"
 #include "parser.tab.hpp"
-using namespace std;
+	using namespace std;
 	/**********************************************************************************
 	 *                                   Header
 	 ***********************************************************************************/
@@ -19,11 +19,11 @@ using namespace std;
 	/**********************************************************************************
 	 *                                   Function Declarations
 	 ***********************************************************************************/
-extern int yylex();
-extern char* yytext;
-extern int yylineno;
-void yyerror(const char* msg);
-%}
+	extern int yylex();
+	extern char* yytext;
+	extern int yylineno;
+	void yyerror(const char* msg);
+	%}
 
 /**********************************************************************************
  *                                   Tokens
@@ -160,7 +160,6 @@ BLK: DECLARATIONS '{' LIST '}' {
 
 DECLARATIONS: TK_var DECLARLIST {
 
-
 }
 | /*epsilon*/{
 }
@@ -182,7 +181,6 @@ DECLARLIST: DECLARLIST DCL ';' {
  ***********************************************************************************/
 
 DCL: TK_id ':' TYPE {
-
 
 }
 | TK_id ':' TK_id {
@@ -209,12 +207,12 @@ LIST: LIST STMT {
  *                        PROGRAM
  ***********************************************************************************/
 
-STMT: ASSN 
-| CNTRL 
-| READ 
-| WRITE 
-| STMT_RETURN 
-| BLK 
+STMT: ASSN
+| CNTRL
+| READ
+| WRITE
+| STMT_RETURN
+| BLK
 ;
 /**********************************************************************************
  *                        PROGRAM
@@ -224,21 +222,63 @@ STMT_RETURN: TK_return '(' EXP ')' ';' {
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        WRITE
  ***********************************************************************************/
 
 WRITE: TK_write '(' EXP ')' ';' {
 
+	if ($3.type == INT) {
+		buffer.emit("PRNTI I" + to_string($3.registerNum));
+	}
+	else if ($3.type == REAL) {
+		buffer.emit("PRNTR R" + to_string($3.registerNum));
+	} else {
+		//(our internal error)
+	}
+
 }
 | TK_write '(' TK_str ')' ';' {
+
+	for (size_t i = 0; i < $3.value.length(); i++) {
+		char currentChar = $3.value[i];
+		//take care of \n and \r :
+		if (currentChar == '\\' && $3.value[i+1] == 'n') {
+				currentChar = '\n';
+				i++;
+		}else if (currentChar == '\\' && $3.value[i+1] == 't') {
+				currentChar = '\t';
+				i++;
+		}
+		//cast to asci
+		int asci_char = static_cast<int>(currentChar);
+		buffer.emit("PRNTC " + to_string(asci_char));
+	}
+
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        READ
  ***********************************************************************************/
 
 READ: TK_read '(' LVAL ')' ';' {
-
+	
+	//check for type semantics
+	if($3.type != INT && $.type != REAL){
+		//semantic error - read exept only INT or REAL
+		cerr << "Semantic error:"
+		<< " READ expecting types: REAL or INT "
+		<< " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	//stage1 read into a temp register
+	//compute string to emit
+	string toEmitRead = ($3.type == INT) ? "READI I" : "READR R";
+	int reg = $3.registerNum; // the register we read into
+	toEmitRead+= to_string(reg);
+	
+	//now, do the job
+	buffer.emit(toEmitRead);
 }
 ;
 /**********************************************************************************
@@ -247,7 +287,6 @@ READ: TK_read '(' LVAL ')' ';' {
 
 ASSN: LVAL TK_assign EXP ';' {
 
-
 }
 ;
 /**********************************************************************************
@@ -255,8 +294,10 @@ ASSN: LVAL TK_assign EXP ';' {
  ***********************************************************************************/
 
 LVAL: TK_id {
+	//todo: set type as INT or REAL (for READ to work)
 }
 | STREF {
+	//todo: set type as something different from INT and REAL (for READ to work)
 }
 ;
 /**********************************************************************************
@@ -265,10 +306,8 @@ LVAL: TK_id {
 
 CNTRL: TK_if BEXP TK_then STMT TK_else STMT {
 
-
 }
 | TK_if BEXP TK_then STMT {
-
 
 }
 | TK_while BEXP TK_do STMT {
@@ -323,10 +362,10 @@ EXP: EXP TK_addop EXP {
 	string myType;
 	if ($$.type == REAL) {
 		myType += "R";
-    }
-    else{
-    	myType += "I";
-    }
+	}
+	else {
+		myType += "I";
+	}
 
 	$$.registerNum = bank.getRegister($$.type);
 
@@ -367,10 +406,10 @@ EXP: EXP TK_addop EXP {
 
 	string myType;
 	if ($$.type == REAL) {
-	  myType += "R";
+		myType += "R";
 	}
-	else{
-	  myType += "I";
+	else {
+		myType += "I";
 	}
 
 	$$.registerNum = bank.getRegister($$.type);
