@@ -9,11 +9,16 @@
 #include <iostream>
 #include <stdio.h>
 #include "registersBank.hpp"
+#include "buffer.hpp"
 
 #define EXIT_LEXICAL_FAILURE 1
 #define EXIT_SYNTAX_FAILURE 2
 #define EXIT_SEMANTIC_FAILURE 3
 #define EXIT_OPERATIONAL_FAILURE 9
+
+extern Buffer buffer;
+extern RegistersBank bank;
+
 
 /*
 #ifdef __cplusplus

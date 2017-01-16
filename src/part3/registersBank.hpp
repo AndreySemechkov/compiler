@@ -13,8 +13,6 @@
 
 
 typedef enum { REAL, INT, NONE } t_type ;
-extern RegistersBank bank;
-
 
 //
 // Class :  Registers Bank : handles registers allocation

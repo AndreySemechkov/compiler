@@ -1,5 +1,5 @@
 %{
-	/* Project part 2 - Bison file */
+	/* Project part 3 - Bison file */
 
 	/**********************************************************************************
 	 *                                   Includes
@@ -9,10 +9,7 @@
 #include <stdio.h>
 #include "common.hpp"
 #include "parser.tab.hpp"
-
-	using namespace std;
-
-	ParserNode* parseTree;
+using namespace std;
 	/**********************************************************************************
 	 *                                   Header
 	 ***********************************************************************************/
@@ -22,10 +19,10 @@
 	/**********************************************************************************
 	 *                                   Function Declarations
 	 ***********************************************************************************/
-	extern int yylex();
-	extern char* yytext;
-	extern int yylineno;
-	void yyerror(const char* msg);
+extern int yylex();
+extern char* yytext;
+extern int yylineno;
+void yyerror(const char* msg);
 %}
 
 /**********************************************************************************
@@ -95,12 +92,9 @@
 PROGRAM: TDEFS FDEFS MAIN_FUNCTION
 {
 	/*concatenate all children to a list*/
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
 	/*Now, make the father node*/
-	$$.node = makeNode("PROGRAM",NULL,$1.node);
 	/*Update the global pointer for dumping the parse tree*/
-	parseTree = $$.node;
+	//vparseTree = $$.node;
 }
 ;
 /**********************************************************************************
@@ -117,28 +111,22 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
  *                        PROGRAM
  ***********************************************************************************/
 
-FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')' BLK {
-
+FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')' BLK {}
 | FDEFS TK_extern TYPE TK_id '(' FUNC_ARGLIST_FULL ')' ';' {
 	/*concatenate all children to a list*/
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$1.node = concatList($1.node,$6.node);
-	$1.node = concatList($1.node,$7.node);
-	$1.node = concatList($1.node,$8.node);
 	/*Now, make the father node*/
-	$$.node = makeNode("FDEFS",NULL,$1.node);
 }
-| /*epsilon*/{$$.node = makeNode("FDEFS",NULL, makeNode("EPSILON",NULL,NULL));}
+| /*epsilon*/{
+}
 ;
 /**********************************************************************************
  *                        PROGRAM
  ***********************************************************************************/
 
-FUNC_ARGLIST_FULL: FUNC_ARGLIST {$$.node = makeNode("FUNC_ARGLIST_FULL",NULL, $1.node);}
-| /*epsilon*/{$$.node = makeNode("FUNC_ARGLIST_FULL",NULL, makeNode("EPSILON",NULL,NULL));}
+FUNC_ARGLIST_FULL: FUNC_ARGLIST {
+}
+| /*epsilon*/{
+}
 ;
 /**********************************************************************************
  *                        PROGRAM
@@ -146,14 +134,10 @@ FUNC_ARGLIST_FULL: FUNC_ARGLIST {$$.node = makeNode("FUNC_ARGLIST_FULL",NULL, $1
 
 FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
 	/*concatenate all children to a list*/
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
 	/*Now, make the father node*/
-	$$.node = makeNode("FUNC_ARGLIST",NULL, $1.node);
 
 }
 | DCL {
-	$$.node = makeNode("FUNC_ARGLIST",NULL, $1.node);
 }
 ;
 /**********************************************************************************
@@ -161,18 +145,13 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
  ***********************************************************************************/
 
 MAIN_FUNCTION: TK_main BLK {
-	$1.node = concatList($1.node,$2.node);
-	$$.node = makeNode("MAIN_FUNCTION",NULL,$1.node);
 }
-| /*epsilon*/{$$.node = makeNode("MAIN_FUNCTION",NULL, makeNode("EPSILON",NULL,NULL));}
+| /*epsilon*/{
+}
 ;
 
 BLK: DECLARATIONS '{' LIST '}' {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$$.node = makeNode("BLK",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -181,11 +160,10 @@ BLK: DECLARATIONS '{' LIST '}' {
 
 DECLARATIONS: TK_var DECLARLIST {
 
-	$1.node = concatList($1.node,$2.node);
-	$$.node = makeNode("DECLARATIONS",NULL,$1.node);
 
 }
-| /*epsilon*/{$$.node = makeNode("DECLARATIONS",NULL, makeNode("EPSILON",NULL,NULL));}
+| /*epsilon*/{
+}
 ;
 /**********************************************************************************
  *                        PROGRAM
@@ -193,15 +171,10 @@ DECLARATIONS: TK_var DECLARLIST {
 
 DECLARLIST: DECLARLIST DCL ';' {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("DECLARLIST",NULL,$1.node);
 }
 
 | DCL ';' {
 
-	$1.node = concatList($1.node,$2.node);
-	$$.node = makeNode("DECLARLIST",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -210,33 +183,26 @@ DECLARLIST: DECLARLIST DCL ';' {
 
 DCL: TK_id ':' TYPE {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("DCL",NULL,$1.node);
 
 }
 | TK_id ':' TK_id {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("DCL",NULL,$1.node);
 }
 | TK_id ',' DCL {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("DCL",NULL,$1.node);
 }
 ;
 /**********************************************************************************
  *                        PROGRAM
  ***********************************************************************************/
 
-TYPE: TK_integer {$$.node = makeNode("TYPE",NULL, $1.node);}
-| TK_real {$$.node = makeNode("TYPE",NULL, $1.node);}
+TYPE: TK_integer {
+}
+| TK_real {
+}
 ;
 
-LIST: LIST STMT {$1.node = concatList($1.node,$2.node);
-	$$.node = makeNode("LIST",NULL, $1.node);}
+LIST: LIST STMT {
+}
 | /*epsilon*/
 ;
 /**********************************************************************************
@@ -255,11 +221,6 @@ STMT: ASSN
  ***********************************************************************************/
 
 STMT_RETURN: TK_return '(' EXP ')' ';' {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$$.node = makeNode("STMT_RETURN",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -268,18 +229,8 @@ STMT_RETURN: TK_return '(' EXP ')' ';' {
 
 WRITE: TK_write '(' EXP ')' ';' {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$$.node = makeNode("WRITE",NULL,$1.node);
 }
 | TK_write '(' TK_str ')' ';' {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$$.node = makeNode("WRITE",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -288,11 +239,6 @@ WRITE: TK_write '(' EXP ')' ';' {
 
 READ: TK_read '(' LVAL ')' ';' {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$$.node = makeNode("READ",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -301,10 +247,6 @@ READ: TK_read '(' LVAL ')' ';' {
 
 ASSN: LVAL TK_assign EXP ';' {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$$.node = makeNode("ASSN",NULL,$1.node);
 
 }
 ;
@@ -312,8 +254,10 @@ ASSN: LVAL TK_assign EXP ';' {
  *                        PROGRAM
  ***********************************************************************************/
 
-LVAL: TK_id {$$.node = makeNode("LVAL",NULL, $1.node);}
-| STREF {$$.node = makeNode("LVAL",NULL, $1.node);}
+LVAL: TK_id {
+}
+| STREF {
+}
 ;
 /**********************************************************************************
  *                        PROGRAM
@@ -321,27 +265,13 @@ LVAL: TK_id {$$.node = makeNode("LVAL",NULL, $1.node);}
 
 CNTRL: TK_if BEXP TK_then STMT TK_else STMT {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$1.node = concatList($1.node,$6.node);
-	$$.node = makeNode("CNTRL",NULL,$1.node);
 
 }
 | TK_if BEXP TK_then STMT {
 
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$$.node = makeNode("CNTRL",NULL,$1.node);
 
 }
 | TK_while BEXP TK_do STMT {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$$.node = makeNode("CNTRL",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -349,28 +279,14 @@ CNTRL: TK_if BEXP TK_then STMT TK_else STMT {
  ***********************************************************************************/
 
 BEXP: BEXP TK_or BEXP {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("BEXP",NULL,$1.node);
 }
 | BEXP TK_and BEXP {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("BEXP",NULL,$1.node);
 }
 | TK_not BEXP {
-	$1.node = concatList($1.node,$2.node);
-	$$.node = makeNode("BEXP",NULL,$1.node);
 }
 | EXP TK_relop EXP {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("BEXP",NULL,$1.node);
 }
 | '(' BEXP ')' {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("BEXP",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -386,7 +302,7 @@ EXP: EXP TK_addop EXP {
 	if($1.type != $3.type) { //different types
 		//erorr
 		cerr << "Semantic error:"
-		<< " differnt types, EXP  TK_addop EXP"
+		<< " different types, EXP  TK_addop EXP"
 		<< " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
@@ -404,8 +320,13 @@ EXP: EXP TK_addop EXP {
 	}
 
 	//EMIT
-
-	string myType = ($$.type == REAL) ? "R" : "I";
+	string myType;
+	if ($$.type == REAL) {
+		myType += "R";
+    }
+    else{
+    	myType += "I";
+    }
 
 	$$.registerNum = bank.getRegister($$.type);
 
@@ -425,7 +346,7 @@ EXP: EXP TK_addop EXP {
 	if($1.type != $3.type) { //different types
 		//erorr
 		cerr << "Semantic error:"
-		<< " differnt types, EXP*EXP"
+		<< " different types, EXP*EXP"
 		<< " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
@@ -444,9 +365,15 @@ EXP: EXP TK_addop EXP {
 	}
 	//EMIT
 
-	string myType = ($$.type == REAL) ? "R" : "I";
+	string myType;
+	if ($$.type == REAL) {
+	  myType += "R";
+	}
+	else{
+	  myType += "I";
+	}
 
-	$$.registerNum = bank.getRegister($$.type).;
+	$$.registerNum = bank.getRegister($$.type);
 
 	if ($2.value == "*") {
 		buffer.emit("MULT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
@@ -458,7 +385,7 @@ EXP: EXP TK_addop EXP {
 }
 | '(' EXP ')' {
 
-	$$ = $2
+	$$ = $2;
 }
 | '(' TYPE ')' EXP {
 	// Explicit casting: int to real and real to int. all other casting options are semantics errors.
@@ -512,7 +439,6 @@ EXP: EXP TK_addop EXP {
 	}
 }
 | TK_id {
-	$$.node = makeNode("EXP",NULL,$1.node);
 }
 | STREF {
 
@@ -538,7 +464,6 @@ EXP: EXP TK_addop EXP {
 
 }
 | CALL {
-	$$.node = makeNode("EXP",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -546,17 +471,9 @@ EXP: EXP TK_addop EXP {
  ***********************************************************************************/
 
 STREF: TK_id '[' TK_id ']' {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$$.node = makeNode("STREF",NULL,$1.node);
 
 }
 | STREF '[' TK_id ']' {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$$.node = makeNode("STREF",NULL,$1.node);
 }
 ;
 /**********************************************************************************
@@ -564,25 +481,18 @@ STREF: TK_id '[' TK_id ']' {
  ***********************************************************************************/
 
 CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$1.node = concatList($1.node,$4.node);
-	$1.node = concatList($1.node,$5.node);
-	$$.node = makeNode("CALL",NULL,$1.node);
 }
 ;
 
 CALL_ARGS_FULL: CALL_ARGS {
-	$$.node = makeNode("CALL_ARGS_FULL",NULL, $1.node);
 }
-| /*epsilon*/{$$.node = makeNode("CALL_ARGS_FULL",NULL, makeNode("EPSILON",NULL,NULL));}
+| /*epsilon*/{
+}
 ;
 
-CALL_ARGS: EXP {$$.node = makeNode("CALL_ARGS",NULL, $1.node);}
+CALL_ARGS: EXP {
+}
 | CALL_ARGS ',' EXP {
-	$1.node = concatList($1.node,$2.node);
-	$1.node = concatList($1.node,$3.node);
-	$$.node = makeNode("CALL_ARGS",NULL, $1.node);
 }
 ;
 /**********************************************************************************

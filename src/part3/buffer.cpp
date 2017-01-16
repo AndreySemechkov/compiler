@@ -6,12 +6,10 @@
 
 #include "buffer.hpp"
 
-Buffer::Buffer(){
-	bufferLines = new vector<string>;
+Buffer::Buffer(){	
 }
 
 Buffer::~Buffer(){
-	delete bufferLines;
 }
 
 //Adds another line of code to the buffer

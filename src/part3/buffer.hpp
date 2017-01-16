@@ -1,14 +1,15 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "common.hpp"
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <iostream>
 #include <vector>
-
-extern Buffer buffer;
 
 using namespace std;
 
-class Buffer{
+class Buffer {
 
 private:
 	vector<string> bufferLines;
@@ -24,7 +25,7 @@ public:
 	// Performs the backpathing action from the lines numbers counted from zero
 	// input: topatch_list vector of line numbers that need patching
 	//        address data to attach
-	void Buffer::backpatch(vector<int> lineNums , int address);
+	void backpatch(vector<int> lineNums , int address);
 
 	//prints all buffer lines
 	void print();

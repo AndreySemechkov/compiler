@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
-#include "common.h"
-#include "parser.tab.h"
+#include "common.hpp"
+#include "parser.tab.hpp"
 
 //Helper Functions
 //Debug functions to print values
@@ -12,7 +12,7 @@ void showStr();
 //funtion to call when there is a lexical error
 void printError();
 // the funtions that creates nodes from tokens data for the parse tree to be created by the parser
-void setValue(char* type,char* value);
+void setValue(string type,char* value);
 %}
 
 %option yylineno
@@ -66,7 +66,7 @@ not              [!]
 {whitespace} {}
 {str} {
 
-	char * buff = malloc(strlen(yytext-2));
+	char * buff = (char*)malloc(strlen(yytext-2));
 	strncpy(buff, &yytext[1], strlen(yytext) - 2 );
 	setValue("str", buff);
         free(buff);  
