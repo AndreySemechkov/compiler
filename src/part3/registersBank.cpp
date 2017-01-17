@@ -2,7 +2,7 @@
  * RegistersBank.cpp
  *
  *  Created on: Jan 16, 2017
- *      Author: compm
+ *      Author: saar
  */
 
 #include "registersBank.h"

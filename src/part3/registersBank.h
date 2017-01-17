@@ -2,17 +2,12 @@
  * registersBank.hpp
  *
  *  Created on: Jan 16, 2017
- *      Author: compm
+ *      Author: saar
  */
 
-#ifndef REGISTERSBANK_HPP_
-#define REGISTERSBANK_HPP_
-
-#define NUM_STACK_REGISTERS 4
-#define NUM_RETURN_REGISTERS 1
-
-
-typedef enum { REAL, INT, NONE } t_type ;
+#ifndef REGISTERSBANK_H_
+#define REGISTERSBANK_H_
+#include "definitions.h"
 
 //
 // Class :  Registers Bank : handles registers allocation
@@ -27,4 +22,4 @@ public:
 
 };
 
-#endif /* REGISTERSBANK_HPP_ */
+#endif /* REGISTERSBANK_H_ */
