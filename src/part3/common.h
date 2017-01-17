@@ -13,6 +13,10 @@
 
 extern Buffer buffer;
 extern RegistersBank bank;
+extern TableOfSymbols symbolTable;
+
+//no adress
+#define NO_ADDR -1
 
 
 /*
@@ -31,6 +35,7 @@ typedef struct {
 	t_type type;
 	std::string value; // for keeping multiple types.
 	int registerNum;
+	int addr; //if the variable is stored in memory, address will represent where (the offset) , else it will be NO_ADDR
 
 } yystype_t;
 

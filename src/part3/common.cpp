@@ -9,6 +9,7 @@
 
 Buffer buffer;
 RegistersBank bank;
+TableOfSymbols symbolTable;
 
 extern int yyparse (void);
 /**************************************************************************/

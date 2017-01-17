@@ -4,10 +4,10 @@
 	/**********************************************************************************
 	 *                                   Includes
 	 ***********************************************************************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include "common.h"
+#include "defintions.h"
 #include "parser.tab.hpp"
 using namespace std;
 	/**********************************************************************************
@@ -263,22 +263,30 @@ WRITE: TK_write '(' EXP ')' ';' {
 READ: TK_read '(' LVAL ')' ';' {
 	
 	//check for type semantics
-	if($3.type != INT && $3.type != REAL){
-		//semantic error - read exept only INT or REAL
-		cerr << "Semantic error:"
-		<< " READ expecting types: REAL or INT "
-		<< " in line number " << to_string(yylineno) << endl;
-		exit(EXIT_SEMANTIC_FAILURE);
-	}
-	
-	//stage1 read into a temp register
-	//compute string to emit
-	string toEmitRead = ($3.type == INT) ? "READI I" : "READR R";
-	int reg = $3.registerNum; // the register we read into
-	toEmitRead+= to_string(reg);
-	
-	//now, do the job
-	buffer.emit(toEmitRead);
+		if($3.type != INT && $.type != REAL){
+			//semantic error - read exept only INT or REAL
+			cerr << "Semantic error:"
+			<< " READ expecting types: REAL or INT "
+			<< " in line number " << to_string(yylineno) << endl;
+			exit(EXIT_SEMANTIC_FAILURE);
+		}
+		
+		//stage1 read into a temp register
+		//compute string to emit
+		string toEmitRead = ($3.type == INT) ? "READI I" : "READR R";
+		int reg = bank.getRegister($3.type); // the register we read into
+		toEmitRead+= to_string(reg);
+		//now, do the job
+		buffer.emit(toEmitRead);
+		
+		//stage2: store to mem
+		//compute string to emit
+		string toEmitStore = ($3.type == INT) ? "STORI I" : "STORR R";
+		toEmitStore+= to_string(reg);
+		toEmitStore = toEmitStore + " I" + to_string($3.adder) + " 0"; //the LVAL is in memmorry, addr stores where //FIXME:
+		
+		//now, do the job
+		buffer.emit(toEmitStore);
 }
 ;
 /**********************************************************************************
@@ -295,9 +303,36 @@ ASSN: LVAL TK_assign EXP ';' {
 
 LVAL: TK_id {
 	//todo: set type as INT or REAL (for READ to work)
+	//SEMANTIC CHECKS:
+	//is id in the sybol table?
+	string name = $1.value;
+	bool exists = symbolTable.find(name);
+	if(!exists){
+		cerr << "Semantic error: undeclared symbol '" << name << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	//lval can be a struct!
+	
+	//init LVL:
+	$$.value = name;
+
+	// set type of EXP :
+	$$.type = symbolTable.getType(name);
+	
+	
+	if($$.type != REAL && $$.type != INT){
+		//todo:
+		//means it is a struct, we have to do something special?
+	}
+	
+	//both cases
+	$$.addr = symbolTable.getAddr(name);
+
+	//anything else?	
 }
 | STREF {
-	//todo: set type as something different from INT and REAL (for READ to work)
+	//todo: set type as something different from INT and REAL (for READ to work) ???
 }
 ;
 /**********************************************************************************
@@ -478,6 +513,44 @@ EXP: EXP TK_addop EXP {
 	}
 }
 | TK_id {
+	
+	// check if id is declared in the current scope:
+	string name = $1.value;
+	
+	//semantics checks:
+	bool exists = symbolTable.find(tmp);
+	if (!exists) {
+		cerr << "Semantic error: undeclared symbol '" << name << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+		
+	// check if id is int or real:
+	type_t myType = symbolTable.getType(name);
+	if ( myType != INT && myType!= REAL) {
+		cerr << "Semantic error: invalid use of symbol '" << name << "'";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	//init EXP:
+	
+	// set type of EXP :
+	$$.type = myType;
+	string toEmitLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
+	
+	// allocate a register for EXP :
+	$$.registerNum = bank.getRegister($$.type);
+	toEmitLoad+= to_string($$.registerNum);
+	
+	//get adder, in order to load
+	int addr = symbolTable.getAddr(name);
+	//TODO: should save the addr for EXP ? (I think we should not, so I avoid saving it to avoid errors).
+	
+	
+	//load to register
+	buffer.emit(emmittedLoad + " 0 " + to_string(addr)); //FIXME: check if the address is right
+	
 }
 | STREF {
 

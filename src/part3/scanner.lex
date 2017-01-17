@@ -143,6 +143,8 @@ void setValue (string type,char* value) {
     
     //initialize value
   yylval.value = value ? value : "" ; 
+  
+  yylval.addr = NO_ADDR ;
 
 }
 

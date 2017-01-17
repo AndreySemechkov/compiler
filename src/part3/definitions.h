@@ -20,7 +20,7 @@ typedef enum { REAL, INT, NONE } t_type ;
 #define EXIT_OPERATIONAL_FAILURE 9
 
 
-
+typedef NONE structType;
 
 
 #endif /* DEFINITIONS_H_ */
