@@ -371,9 +371,11 @@ EXP: EXP TK_addop EXP {
 
 	if ($2.value == "+") {
 		buffer.emit("ADD2" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		buffer.print();
 	}
 	else { // "-"
 		buffer.emit("SUBT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		buffer.print();
 	}
 }
 | EXP TK_mulop EXP {
@@ -416,9 +418,11 @@ EXP: EXP TK_addop EXP {
 
 	if ($2.value == "*") {
 		buffer.emit("MULT" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		buffer.print();
 	}
 	else { // "/"
 		buffer.emit("DIVD" + myType + " " + myType + to_string($$.registerNum) + " " + myType + to_string(leftRegister) + " " + myType + to_string(rightRegister));
+		buffer.print();
 	}
 
 }
@@ -440,7 +444,7 @@ EXP: EXP TK_addop EXP {
 
 			//emit
 			buffer.emit("CITOR R" + to_string($$.registerNum) + " I" + to_string($4.registerNum));
-
+			buffer.print();
 		} else {
 			//semantic error
 			cerr << "Semantic error:"
@@ -460,7 +464,7 @@ EXP: EXP TK_addop EXP {
 
 			// emit
 			buffer.emit("CRTOI I" + to_string($$.registerNum) + " R" + to_string($4.registerNum));
-
+			buffer.print();
 		} else {
 			//semantic error
 			cerr << "Semantic error:"
@@ -496,9 +500,11 @@ EXP: EXP TK_addop EXP {
 	//emit
 	if ($$.type == REAL) { //real
 		buffer.emit("COPYR R" + to_string($$.registerNum) + " " + $1.value);
+		buffer.print();
 	}
 	else { //int
 		buffer.emit("COPYI I" + to_string($$.registerNum) + " " + $1.value);
+		buffer.print();
 	}
 
 }
