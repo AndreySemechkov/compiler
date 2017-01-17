@@ -5,7 +5,7 @@
  *      Author: Andrey
  */
 
-#include "tableOfSymbols.hpp"
+#include "tableOfSymbols.h"
 
 namespace std {
 

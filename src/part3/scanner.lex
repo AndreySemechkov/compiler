@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
-#include "common.hpp"
+#include "common.h"
 #include "parser.tab.hpp"
 
 //Helper Functions

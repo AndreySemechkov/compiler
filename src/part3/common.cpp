@@ -1,6 +1,6 @@
 /* 046266 Compilation Methods, EE Faculty, Technion                        */
 /* part2_helpers.c - Helper functions for project part 2 - implementation  */
-#include "common.hpp"
+#include "common.h"
 
 
 /**************************************************************************/

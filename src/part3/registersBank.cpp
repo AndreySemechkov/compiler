@@ -5,7 +5,7 @@
  *      Author: compm
  */
 
-#include "registersBank.hpp"
+#include "registersBank.h"
 
 RegistersBank::RegistersBank() {
 	bank[REAL] = 0;

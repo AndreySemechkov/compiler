@@ -1,4 +1,4 @@
-% {
+%{
 	/* Project part 3 - Bison file */
 
 	/**********************************************************************************
@@ -7,9 +7,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "common.hpp"
+#include "common.h"
 #include "parser.tab.hpp"
-	using namespace std;
+using namespace std;
 	/**********************************************************************************
 	 *                                   Header
 	 ***********************************************************************************/
@@ -263,7 +263,7 @@ WRITE: TK_write '(' EXP ')' ';' {
 READ: TK_read '(' LVAL ')' ';' {
 	
 	//check for type semantics
-	if($3.type != INT && $.type != REAL){
+	if($3.type != INT && $3.type != REAL){
 		//semantic error - read exept only INT or REAL
 		cerr << "Semantic error:"
 		<< " READ expecting types: REAL or INT "

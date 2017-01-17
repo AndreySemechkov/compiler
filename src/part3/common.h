@@ -8,8 +8,8 @@
 #include <string>
 #include <iostream>
 #include <stdio.h>
-#include "registersBank.hpp"
-#include "buffer.hpp"
+#include "registersBank.h"
+#include "buffer.h"
 
 #define EXIT_LEXICAL_FAILURE 1
 #define EXIT_SYNTAX_FAILURE 2

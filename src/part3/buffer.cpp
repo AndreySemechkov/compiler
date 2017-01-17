@@ -4,7 +4,7 @@
  *
  */
 
-#include "buffer.hpp"
+#include "buffer.h"
 
 Buffer::Buffer(){	
 }
