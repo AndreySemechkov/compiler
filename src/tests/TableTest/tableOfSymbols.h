@@ -81,7 +81,7 @@ public:
 	int getTableSize() const;
 
 	// adds a new symbol named name to the current scope stack of this variable.
-	void addSymbol(string name, t_type symType,int address) throw(string);
+	void addSymbol(string name, t_type symType,int address);
 
 	// opens a new scope with the variables from the father scope.
 	void startNewScope();
@@ -90,19 +90,19 @@ public:
 	void endScope();
 
 	// returns true if a symbol is a struct
-	bool isStruct(string name) const throw(string);
+	bool isStruct(string name);
 
 	// tells whether a symbol is in the table in the current scope
-	bool find(string name) const;
+	bool find(string name);
 
 	// returns the type of symbol named name from the table in the current scope
-	t_type getType(string name) const throw(string);
+	t_type getType(string name);
 
 	// returns the address of symbol named name from the table in the current scope
-	int getAddr(string name) const throw(string);
+	int getAddr(string name);
 
 	//prints all elements by that name
-	void print() const;
+	void print();
 };
 
 

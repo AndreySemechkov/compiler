@@ -9,52 +9,46 @@
 
 
 
-    TableOfSymbols::TableOfSymbols()
-    {
+    TableOfSymbols::TableOfSymbols(){
 		this->currentTableScopeID = 0;
 	}
 
-    TableOfSymbols::~TableOfSymbols()
-    {
+    TableOfSymbols::~TableOfSymbols(){
 	};
 
-	int TableOfSymbols::getTableID() const
-	{
+	int TableOfSymbols::getTableID() const{
 		return this->currentTableScopeID;
 	}
 
-	int TableOfSymbols::getTableSize() const
-	{
+	int TableOfSymbols::getTableSize() const{
 		return this->scopeMap.size();
 	}
 
 	// returns true if a symbol is a struct
-	bool TableOfSymbols::isStruct(string name) const throw(string)
-	{
+	bool TableOfSymbols::isStruct(string name){
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 
 		if(it != this->scopeMap.end()){
 			if(it->second.empty()){
-				cerr << " stack requested empty"<< endl; //TODO: change cerr to exceptions and handle above
-				//throw "error: " + name + " stack requested empty" + '\n';
+				cerr << " stack requested empty"<< endl;
+				throw "error: " + name + " stack requested empty" + '\n';
 				return false;
 			}
 			return (it->second.top().type==structType);
 		}
 
 		throw "error: " + name + " was not found in table" + '\n';
+		return false;
 	}
 
 		// tells whether a symbol is in the table in the current scope
-	bool TableOfSymbols::find(string name) const
-	{
+	bool TableOfSymbols::find(string name){
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		return it != this->scopeMap.end() && !it->second.empty();
 	}
 
 		// returns the type of symbol named name from the table in the current scope
-	t_type TableOfSymbols::getType(string name) const throw(string)
-	{
+	t_type TableOfSymbols::getType(string name){
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
 		    throw "error: " + name +" was not found" + '\n';
@@ -62,16 +56,14 @@
 	}
 
 		// returns the address of symbol named name from the table in the current scope
-	int TableOfSymbols::getAddr(string name) const throw(string)
-	{
+	int TableOfSymbols::getAddr(string name){
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
 		     throw "error: " + name + " was not found" + '\n';
 		return it->second.top().address;
 	}
 
-	void TableOfSymbols::print() const
-	{
+	void TableOfSymbols::print(){
 		cout << "current Table scope id: " + to_string(this->currentTableScopeID) << '\n';
 		cout << "current Table symbols: " << '\n';
 		for (map<string,stack<symbol>>::iterator it = scopeMap.begin(); it != scopeMap.end(); it++) {
@@ -81,8 +73,7 @@
 	}
 
 	// adds a new symbol name name to the current scope
-	void TableOfSymbols::addSymbol(string name, t_type symType,int address) throw(string)
-	{
+	void TableOfSymbols::addSymbol (string name, t_type symType,int address) {
 
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		// new symbol, not previously declared
@@ -94,13 +85,13 @@
 		    this->scopeMap[name].push(sym);
 
 		    //debug
-		    //map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
-		    //cout << "added symbol: " << '\n';
-		    //it->second.top().print();
+		    map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		    cout << "added symbol: " << '\n';
+		    it->second.top().print();
 
 		    // where here so there was a symbol called name in the past
 		}else if (it->second.empty()){
-			cerr << "error: symbol named " + name + "was popped from its stack" << endl; //TODO : replace cerr with agreed exceptions handling
+			cerr << "error: symbol named " + name + "was popped from its stack" << endl;
 
 			// Table scope closing error: symbol named   name has scope less than current this symbol should have been deleted earlier
 		}else if (it->second.top().scopeID < this->currentTableScopeID){
@@ -121,8 +112,8 @@
 
 		    //debug
 		    //		    map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
-		   // 		    cout << "added symbol: " << '\n';
-		    //		    it->second.top().print();
+		    		    cout << "added symbol: " << '\n';
+		    		    it->second.top().print();
 		}
 	}
 
@@ -134,19 +125,17 @@
     */
 
 	// opens a new  inner blokc scope with the variables from the father scope.
-	void TableOfSymbols::startNewScope()
-	{
+	void TableOfSymbols::startNewScope(){
         this->currentTableScopeID--;
 	}
 
 		// deletes all local scope variables, ends the current scope and updates table to father scope symbols
-	void TableOfSymbols::endScope()
-	{
+	void TableOfSymbols::endScope(){
 	    for(map<string,stack<symbol>>::iterator it = this->scopeMap.begin(); it != this->scopeMap.end(); it++){
             if( it->second.top().scopeID <= this->currentTableScopeID ){
                 // debug
-            	//cout << "deleted symbol: " << '\n';
-                //it->second.top().print();
+            	cout << "deleted symbol: " << '\n';
+                it->second.top().print();
 
                 it->second.pop();
             	if(it->second.empty())
