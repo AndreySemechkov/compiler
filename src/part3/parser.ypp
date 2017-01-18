@@ -1,4 +1,4 @@
-%{
+% {
 	/* Project part 3 - Bison file */
 
 	/**********************************************************************************
@@ -9,7 +9,7 @@
 #include "common.h"
 #include "defintions.h"
 #include "parser.tab.hpp"
-using namespace std;
+	using namespace std;
 	/**********************************************************************************
 	 *                                   Header
 	 ***********************************************************************************/
@@ -138,7 +138,7 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
 
 }
 | DCL {
-	
+
 }
 ;
 /**********************************************************************************
@@ -182,7 +182,7 @@ DECLARLIST: DECLARLIST DCL ';' {
  ***********************************************************************************/
 
 DCL: TK_id ':' TYPE {
-		
+
 }
 | TK_id ':' TK_id {
 
@@ -195,11 +195,11 @@ DCL: TK_id ':' TYPE {
  ***********************************************************************************/
 
 TYPE: TK_integer {
-	
+
 	$$.type = INT;
 }
 | TK_real {
-	$$.type = REAL; 
+	$$.type = REAL;
 }
 ;
 
@@ -247,11 +247,11 @@ WRITE: TK_write '(' EXP ')' ';' {
 		char currentChar = $3.value[i];
 		//take care of \n and \r :
 		if (currentChar == '\\' && $3.value[i+1] == 'n') {
-				currentChar = '\n';
-				i++;
-		}else if (currentChar == '\\' && $3.value[i+1] == 't') {
-				currentChar = '\t';
-				i++;
+			currentChar = '\n';
+			i++;
+		} else if (currentChar == '\\' && $3.value[i+1] == 't') {
+			currentChar = '\t';
+			i++;
 		}
 		//cast to asci
 		int asci_char = static_cast<int>(currentChar);
@@ -265,32 +265,32 @@ WRITE: TK_write '(' EXP ')' ';' {
  ***********************************************************************************/
 
 READ: TK_read '(' LVAL ')' ';' {
-	
+
 	//check for type semantics
-		if($3.type != INT && $.type != REAL){
-			//semantic error - read exept only INT or REAL
-			cerr << "Semantic error:"
-			<< " READ expecting types: REAL or INT "
-			<< " in line number " << to_string(yylineno) << endl;
-			exit(EXIT_SEMANTIC_FAILURE);
-		}
-		
-		//stage1 read into a temp register
-		//compute string to emit
-		string toEmitRead = ($3.type == INT) ? "READI I" : "READR R";
-		int reg = bank.getRegister($3.type); // the register we read into
-		toEmitRead+= to_string(reg);
-		//now, do the job
-		buffer.emit(toEmitRead);
-		
-		//stage2: store to mem
-		//compute string to emit
-		string toEmitStore = ($3.type == INT) ? "STORI I" : "STORR R";
-		toEmitStore+= to_string(reg);
-		toEmitStore = toEmitStore + " " + to_string($3.adder) + " 0"; //the LVAL is in memmorry, addr stores where //FIXME:
-		
-		//now, do the job
-		buffer.emit(toEmitStore);
+	if($3.type != INT && $.type != REAL) {
+		//semantic error - read exept only INT or REAL
+		cerr << "Semantic error:"
+		<< " READ expecting types: REAL or INT "
+		<< " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+
+	//stage1 read into a temp register
+	//compute string to emit
+	string toEmitRead = ($3.type == INT) ? "READI I" : "READR R";
+	int reg = bank.getRegister($3.type);// the register we read into
+	toEmitRead+= to_string(reg);
+	//now, do the job
+	buffer.emit(toEmitRead);
+
+	//stage2: store to mem
+	//compute string to emit
+	string toEmitStore = ($3.type == INT) ? "STORI I" : "STORR R";
+	toEmitStore+= to_string(reg);
+	toEmitStore = toEmitStore + " " + to_string($3.adder) + " 0";//the LVAL is in memmorry, addr stores where //FIXME:
+
+	//now, do the job
+	buffer.emit(toEmitStore);
 }
 ;
 /**********************************************************************************
@@ -300,29 +300,28 @@ READ: TK_read '(' LVAL ')' ';' {
 ASSN: LVAL TK_assign EXP ';' {
 
 	//SEMANTIC CHECKS: assert both have the same types
-	if($1.type != $3.type){
+	if($1.type != $3.type) {
 		cerr << "Semantic error:"
 		<< " ASSN expecting same types "
 		<< " in line number " << to_string(yylineno) << endl;
 	}
-	
+
 	//set type
-	$$.type = $1.type ;
-	
+	$$.type = $1.type;
+
 	//case 1 : EXP is REAL or INT
-	if($$.type == REAL || $$.type == INT){
-		
+	if($$.type == REAL || $$.type == INT) {
+
 		// assign value to lval memory.
 
-		string toEmitStore = ($$.type == INT ) ? "STORI I" : "STORR R" ;
+		string toEmitStore = ($$.type == INT ) ? "STORI I" : "STORR R";
 		buffer.emit(toEmitStore + to_string($3.registerNum) + " " + to_string($1.addr) + " 0");
 	}
-				
-		
+
 	//case 2: assignment between structs 
-		
-		//TODO:
-		
+
+	//TODO:
+
 }
 ;
 /**********************************************************************************
@@ -335,25 +334,24 @@ LVAL: TK_id {
 	//is id in the sybol table?
 	string name = $1.value;
 	bool exists = symbolTable.find(name);
-	if(!exists){
+	if(!exists) {
 		cerr << "Semantic error: undeclared symbol '" << name << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	//lval can be a struct!
-	
+
 	//init LVL:
 	$$.value = name;
 
 	// set type of EXP :
 	$$.type = symbolTable.getType(name);
-	
-	
-	if($$.type != REAL && $$.type != INT){
-		//todo:
+
+	if($$.type != REAL && $$.type != INT) {
+		//todo: for structs
 		//means it is a struct, do we have to do something special?
 	}
-	
+
 	//both cases
 	$$.addr = symbolTable.getAddr(name);
 
@@ -364,7 +362,7 @@ LVAL: TK_id {
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        CNTRL
  ***********************************************************************************/
 
 CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
@@ -378,8 +376,7 @@ CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
 	 * $8 M2
 	 * $9 S2
 	 */
-	
-	buffer.backpatch($2.trueList,  $4.quad);
+	buffer.backpatch($2.trueList, $4.quad);
 	buffer.backpatch($2.falseList, $8.quad);
 	// merge all three to S list
 	std::set<int> tmp;
@@ -387,11 +384,27 @@ CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
 	MERGE($$.nextList, tmp, $9.nextList);
 }
 | TK_if BEXP TK_then M STMT {
-	
-	
-
+	/* $1 if
+	 * $2 B
+	 * $3 then
+	 * $4 M
+	 * $5 S
+	 */
+	buffer.backpatch($2.trueList , $4.quad);
+	MERGE($$.nextList, $2.falseList, $5.nextList);
 }
-| TK_while BEXP TK_do STMT {
+| TK_while M BEXP TK_do M STMT {
+	/* $1 while
+	 * $2 M1
+	 * $3 B
+	 * $4 do
+	 * $5 M2
+	 * $6 S1
+	 */
+	buffer.backpatch($6.nextList , $2.quad);
+	buffer.backpatch($3.trueList , $5.quad);
+	$$.nestList = $3.falseList ;
+	buffer.emit("UJUMP " + to_string($2.quad));
 }
 ;
 /**********************************************************************************
@@ -404,7 +417,7 @@ BEXP: BEXP TK_or M BEXP {
 	$$.falseList = $4.falseList;
 }
 | BEXP TK_and M BEXP {
-	
+
 	buffer.backpatch($1.trueList , $3.quad);
 	$$.trueList = $4.trueList;
 	MERGE($$.falseList, $1.falseList , $4.falseList);
@@ -417,26 +430,24 @@ BEXP: BEXP TK_or M BEXP {
 | EXP TK_relop EXP {
 	//semantics checks
 	//same type
-	if($1.type != $3.type){
+	if($1.type != $3.type) {
 		//semantic error
 		cerr << "Semantic error:"
 		<< " EXP TK_relop EXP - types must be the same"
 		<< " in line number " << to_string(yylineno) << endl;
 	}
 	//real of int only
-	if($1.type != REAL && $1.type != INT){
+	if($1.type != REAL && $1.type != INT) {
 		//semantic error
 		cerr << "Semantic error:"
 		<< " EXP TK_relop EXP expecting types: REAL or INT "
 		<< " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
-	
-	
+
 	//allocate INT register for comparsion result
 	$$.registerNum = bank.getRegister(INT);
-	
-	
+
 	//the logic here is simple:
 	//if ! (left relop right) branch <--------------- falseList
 	//goto...                        <--------------- trueList
@@ -446,47 +457,45 @@ BEXP: BEXP TK_or M BEXP {
 	string toEmitBranch;
 
 	if ($2.value == "==") {
-		toEmitCompare  = "SEQU" ;
-		toEmitBranch   = "BREQZ";
-		
-	}else if ($2.value == "<>"){
-		toEmitCompare = "SNEQ"
-		toEmitBranch   = "BREQZ";
-		
-	}else if ($2.value == "<"){
-		toEmitCompare = "SLET";
+		toEmitCompare = "SEQU";
 		toEmitBranch = "BREQZ";
-		
-	}else if ($2.value == ">="){
-		toEmitCompare = "SLET";
-		toEmitBranch   = "BNEQZ";
 
-		
-	}else if ($2.value == ">"){
+	} else if ($2.value == "<>") {
+		toEmitCompare = "SNEQ"
+		toEmitBranch = "BREQZ";
+
+	} else if ($2.value == "<") {
+		toEmitCompare = "SLET";
+		toEmitBranch = "BREQZ";
+
+	} else if ($2.value == ">=") {
+		toEmitCompare = "SLET";
+		toEmitBranch = "BNEQZ";
+
+	} else if ($2.value == ">") {
 		toEmitCompare = "SGRT";
 		toEmitBranch = "BREQZ";
-		
-	}else if ($2.value == "<="){
+
+	} else if ($2.value == "<=") {
 		toEmitCompare = "SGRT";
-		toEmitBranch   = "BNEQZ";
+		toEmitBranch = "BNEQZ";
 	}
-	
+
 	//add type letter to toEmitCompare string
-	string type_str = ($1.type == INT) ? "I" : "R" ;
+	string type_str = ($1.type == INT) ? "I" : "R";
 	toEmitCompare+=type_str;
-	
+
 	//add the rest to compare_str
 	toEmitCompare+=" I" + to_string($$.registerNum) + " " + type_str + to_string($1.registerNum) + " " + type_str + to_string($3.registerNum);
-	
+
 	//add the rest to branch_str , leave space to be later backpatched...
 	toEmitBranch+=" I" + to_string($$.registerNum) + " ";
-	
-	
+
 	//now, do the job!
 	buffer.emit(toEmitCompare);
-	$$.falseList.insert(buffer.nextQuad()); // falselist - branch
+	$$.falseList.insert(buffer.nextQuad());// falselist - branch
 	buffer.emit(toEmitBranch);
-	$$.trueList.insert(buffer.nextQuad()); //true list - goto
+	$$.trueList.insert(buffer.nextQuad());//true list - goto
 	buffer.emit("UJUMP ");
 }
 | '(' BEXP ')' {
@@ -595,17 +604,17 @@ EXP: EXP TK_addop EXP {
 | '(' TYPE ')' EXP {
 	// Explicit casting: int to real and real to int. (or casting from the same type. all other casting options are semantics errors.
 
-	if( ($2.type != INT && $2.type != REAL) || ($4.type != INT && $4.type != REAL)){
+	if( ($2.type != INT && $2.type != REAL) || ($4.type != INT && $4.type != REAL)) {
 
 		//semantic error
 		cerr << "Semantic error:"
 		<< " '(' TYPE ')' EXP types should be INT or REAL"
 		<< " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
-		
+
 	}
 	if($2.type == REAL) {
-		$$.type = $2.type;//REAL
+		$$.type = $2.type; //REAL
 
 		if ($4.type == INT) {
 			// TYPE the actual type is a string in .type field
@@ -618,11 +627,11 @@ EXP: EXP TK_addop EXP {
 
 		} else { // both types are ints
 			//nothing to do do ...
-			
+
 		}
 
 	} else if($2.type == INT) {
-		$$.type = $2.type;//INT
+		$$.type = $2.type;			//INT
 
 		if ($4.type == REAL) {
 			// TYPE the actual type is a string in .type field
@@ -636,7 +645,7 @@ EXP: EXP TK_addop EXP {
 		} else { // both types are real
 			//nothing to do do ...
 		}
-		
+
 	} else { // already taken care of.. but nvm
 		//semantic error
 		cerr << "Semantic error:"
@@ -646,10 +655,10 @@ EXP: EXP TK_addop EXP {
 	}
 }
 | TK_id {
-	
+
 	// check if id is declared in the current scope:
 	string name = $1.value;
-	
+
 	//semantics checks:
 	bool exists = symbolTable.find(tmp);
 	if (!exists) {
@@ -657,7 +666,7 @@ EXP: EXP TK_addop EXP {
 		cerr << "in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
-		
+
 	// check if id is int or real:
 	type_t myType = symbolTable.getType(name);
 	if ( myType != INT && myType!= REAL) {
@@ -665,28 +674,27 @@ EXP: EXP TK_addop EXP {
 		cerr << "in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
-	
+
 	//init EXP:
-	
+
 	// set type of EXP :
 	$$.type = myType;
 	string toEmitLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
-	
+
 	// allocate a register for EXP :
 	$$.registerNum = bank.getRegister($$.type);
 	toEmitLoad+= to_string($$.registerNum);
-	
+
 	//get adder, in order to load
 	int addr = symbolTable.getAddr(name);
 	//TODO: should save the addr for EXP ? (I think we should not, so I avoid saving it to avoid errors).
-	
-	
+
 	//load to register
-	buffer.emit(toEmitLoad + " 0 " + to_string(addr)); //FIXME: check if the address is right
-	
+	buffer.emit(toEmitLoad + " 0 " + to_string(addr));//FIXME: check if the address is right
+
 }
 | STREF {
-	
+
 	//TODO:
 
 }
@@ -746,16 +754,16 @@ CALL_ARGS: EXP {
  *                        MARKERS :
  ***********************************************************************************/
 
-M : /* epsilon */ 
+M : /* epsilon */
 {
 	$$.quad = buffer.nextQuad();
 }
 
-N : /* epsilon */ 
-{	
+N : /* epsilon */
+{
 	// set the nextList
 	$$.nextList.insert(buffer.nextQuad());
-	
+
 	// emit goto
 	buffer.emit("UJUMP ");
 }
