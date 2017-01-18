@@ -35,8 +35,10 @@
 
 		if(it != this->scopeMap.end()){
 			if(it->second.empty()){
-				cerr << " stack requested empty"<< endl; //TODO: change cerr to exceptions and handle above
+			//	cerr << " stack requested empty"<< endl; //TODO: change cerr to exceptions and handle above
 				//throw "error: " + name + " stack requested empty" + '\n';
+				throw " symbol " + name + " does not exists";
+
 				return false;
 			}
 			return (it->second.top().type==structType);
@@ -57,7 +59,7 @@
 	{
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
-		    throw "error: " + name +" was not found" + '\n';
+			throw " symbol " + name + " does not exists";
 		return it->second.top().type;
 	}
 
@@ -66,7 +68,7 @@
 	{
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
-		     throw "error: " + name + " was not found" + '\n';
+			throw " symbol " + name + " does not exists";
 		return it->second.top().address;
 	}
 
