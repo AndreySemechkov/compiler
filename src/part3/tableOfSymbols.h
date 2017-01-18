@@ -26,6 +26,8 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <stack>
+#include <vector>
 
 #include "definitions.h"
 
@@ -40,39 +42,58 @@ typedef struct symbol_{
      *  scope > currentTableScopeID this symbol is from fathers scope of this table
      * */
 	int scopeID;
+    int address;
+    //&vector<t_type>;
+} symbol,*pSymbol;
 
-} symbol;
-
-typedef shared_ptr<symbol> spSymbol;
-typedef shared_ptr<TableOfSymbols> spCurrTableOfSymbols;
+//typedef shared_ptr<symbol> spSymbol;
+//typedef shared_ptr<TableOfSymbols> spTableOfSymbols;
 
 
 class TableOfSymbols {
+
 private:
-    map<string,spSymbol> scopeMap;
-    int currentTableScopeID;
+    /*map:  symbol name -> stack of symbols named: symbol name .
+     * each node in the stack is a symbol with diffrent scope.
+     * head of the stack->scopeID is equal to the current currentTableScopeID.
+     *
+     * */
+	map<string,stack<symbol>> scopeMap;
+	int currentTableScopeID;
+/*
+	// removes a symbol and destroys
+	void removeSymbol (string name, int symbolScopeID,);
+*/
 public:
-	TableOfSymbols(int ID){
-		currentTableScopeID = ID;
-	}
 
-	~TableOfSymbols(){
-		//map<string,pSymbol>::
-		//delete symbols
-	};
+    TableOfSymbols();
 
-	int getTableID() const{
-		return currentTableScopeID;
-	}
+	~TableOfSymbols();
 
-	int getTableSize() const{
-		return scopeMap.size();
-	}
-	/*
-	void addSymbol(){
+	int getTableID() const;
 
-	}
-    */
+	int getTableSize() const;
+
+	// adds a new symbol named name to the current scope stack of this variable.
+	void addSymbol(string name, t_type symType,int address);
+
+	// opens a new scope with the variables from the father scope.
+	void startNewScope();
+
+	// deletes all local scope variables, ends the current scope and updates table.
+	void endScope();
+
+	// returns true if a symbol is a struct
+	bool isStruct(string name);
+
+	// tells whether a symbol is in the table in the current scope
+	bool find(string name);
+
+	// returns the type of symbol named name from the table in the current scope
+	t_type getType(string name);
+
+	// returns the address of symbol named name from the table in the current scope
+	int getAddr(string name);
 };
 
 
@@ -80,4 +101,4 @@ public:
 
 
 
-#endif /* SRC_PART3_TABLEOFSYMBOLS_H_ */
+#endif /* TABLEOFSYMBOLS_H_ */
