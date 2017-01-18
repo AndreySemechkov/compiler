@@ -18,7 +18,7 @@ void Buffer::emit(const string& command){
 }
 // Performs the backpatching action from the lines numbers counted from zero
 // input: topatch_list vector of line numbers that need patching
-void Buffer::backpatch(vector<int> lineNums , int address){
+void Buffer::backpatch(set<int> lineNums , int address){
 	string addressString = to_string(address);
 	for (auto num : lineNums) {
         bufferLines[num] += addressString;
@@ -26,7 +26,7 @@ void Buffer::backpatch(vector<int> lineNums , int address){
 }
 
 // return: buffer size
-unsigned int Buffer::getSize(){
+int Buffer::nextQuad(){
 	return bufferLines.size();
 }
 

@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
-
+#include <set>
 
 using namespace std;
 
@@ -26,12 +26,14 @@ public:
 	// Performs the backpathing action from the lines numbers counted from zero
 	// input: topatch_list vector of line numbers that need patching
 	//        address data to attach
-	void backpatch(vector<int> lineNums , int address);
+	void backpatch(set<int> lineNums , int address);
+
 
 	//prints all buffer lines
 	void print();
-	// return: buffer size
-	unsigned int getSize();
+
+	// return the line number of the next quad;
+	int nextQuad();
 };
 
 
