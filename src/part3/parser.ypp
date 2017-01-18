@@ -9,13 +9,12 @@
 #include "common.h"
 #include "defintions.h"
 #include "parser.tab.hpp"
-	using namespace std;
+using namespace std;
 	/**********************************************************************************
 	 *                                   Header
 	 ***********************************************************************************/
-//We create the parser nodes for each token in the lexical analyser. 
-//Using yylval common data structure we transfer the nodes to the parser unit. 
-//In the parser we only create the father node, connect the nodes and build the tree.
+
+//Using yylval common data structure we transfer the data to the parser unit. 
 	/**********************************************************************************
 	 *                                   Function Declarations
 	 ***********************************************************************************/
@@ -91,10 +90,7 @@
  ***********************************************************************************/
 PROGRAM: TDEFS FDEFS MAIN_FUNCTION
 {
-	/*concatenate all children to a list*/
-	/*Now, make the father node*/
-	/*Update the global pointer for dumping the parse tree*/
-	//vparseTree = $$.node;
+	
 }
 ;
 /**********************************************************************************
@@ -146,13 +142,19 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
  ***********************************************************************************/
 
 MAIN_FUNCTION: TK_main BLK {
+	// each function has its local scope with a clean table of its scope and its inner symbols.
+  //TableOfSymbols localTableOfSymbols;
 }
 | /*epsilon*/{
 }
 ;
 
 BLK: DECLARATIONS '{' LIST '}' {
-
+	// each function has its local scope with a clean table of its scope and its inner symbols.
+	//TableOfSymbols localTableOfSymbols;
+	
+	//we reached the end the scope, update symbolTable
+	symbolTable.endScope();
 }
 ;
 /**********************************************************************************
@@ -160,9 +162,12 @@ BLK: DECLARATIONS '{' LIST '}' {
  ***********************************************************************************/
 
 DECLARATIONS: TK_var DECLARLIST {
-
+	//announce that I finished parsing declerations of the current BLK
+	symbolTable.setParsingDeclerations(false);
+	//NOTE: the startNewScope() method was already called by the first DCL
 }
 | /*epsilon*/{
+	// we do not have to announce finish of parsing declerations
 }
 ;
 /**********************************************************************************
@@ -182,12 +187,32 @@ DECLARLIST: DECLARLIST DCL ';' {
  ***********************************************************************************/
 
 DCL: TK_id ':' TYPE {
-
+	//if this is the first DCL to be parsed:
+	if(! symbolTable.isParsingDeclerations()){
+		symbolTable.startNewScope();
+	}
+	//
+	
+	symbolTable.setParsingDeclerations(true);
 }
 | TK_id ':' TK_id {
-
+	//if this is the first DCL to be parsed:
+	if(! symbolTable.isParsingDeclerations()){
+		symbolTable.startNewScope();
+	}
+	//
+	
+	symbolTable.setParsingDeclerations(true);
 }
 | TK_id ',' DCL {
+	//if this is the first DCL to be parsed:
+	if(! symbolTable.isParsingDeclerations()){
+		symbolTable.startNewScope();
+	}
+	//
+	
+	
+	symbolTable.setParsingDeclerations(true);
 }
 ;
 /**********************************************************************************
@@ -343,17 +368,26 @@ LVAL: TK_id {
 
 	//init LVL:
 	$$.value = name;
-
-	// set type of EXP :
-	$$.type = symbolTable.getType(name);
-
-	if($$.type != REAL && $$.type != INT) {
-		//todo: for structs
-		//means it is a struct, do we have to do something special?
-	}
-
-	//both cases
-	$$.addr = symbolTable.getAddr(name);
+    try
+    {
+    	// set type of EXP :
+    		  $$.type = symbolTable.getType(name);
+    		
+    		
+    		  if($$.type != REAL && $$.type != INT){
+    			//todo:
+    			//means it is a struct, do we have to do something special?
+    		  }
+    		
+    		//both cases
+    		  $$.addr = symbolTable.getAddr(name);	
+    } catch(string e)
+    {
+    	cerr << "Semantic error: undeclared symbol '" << e << "' ";
+    	cerr << "in line number " << to_string(yylineno) << endl;
+    	exit(EXIT_SEMANTIC_FAILURE);
+    }
+	
 
 	//anything else?	
 }
@@ -722,7 +756,7 @@ EXP: EXP TK_addop EXP {
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        STREF //TODO:
  ***********************************************************************************/
 
 STREF: TK_id '[' TK_id ']' {
@@ -732,7 +766,7 @@ STREF: TK_id '[' TK_id ']' {
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        CALL //TODO
  ***********************************************************************************/
 
 CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {

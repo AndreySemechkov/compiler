@@ -12,6 +12,7 @@
     TableOfSymbols::TableOfSymbols()
     {
 		this->currentTableScopeID = 0;
+		this->parsingDeclerations = false;
 	}
 
     TableOfSymbols::~TableOfSymbols()
@@ -35,16 +36,14 @@
 
 		if(it != this->scopeMap.end()){
 			if(it->second.empty()){
-			//	cerr << " stack requested empty"<< endl; //TODO: change cerr to exceptions and handle above
-				//throw "error: " + name + " stack requested empty" + '\n';
-				throw " symbol " + name + " does not exists";
-
+				cerr << " stack requested empty"<< endl; //TODO: change cerr to exceptions and handle above
+				throw name;
 				return false;
 			}
 			return (it->second.top().type==structType);
 		}
-
-		throw "error: " + name + " was not found in table" + '\n';
+		cerr << "error: " + name + " was not found in table" + '\n';//TODO cerr
+		throw name;
 	}
 
 		// tells whether a symbol is in the table in the current scope
@@ -59,7 +58,8 @@
 	{
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
-			throw " symbol " + name + " does not exists";
+			throw name;
+			//throw " symbol " + name + " does not exist";
 		return it->second.top().type;
 	}
 
@@ -68,7 +68,8 @@
 	{
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
-			throw " symbol " + name + " does not exists";
+			throw name;
+			//throw " symbol " + name + " does not exist";
 		return it->second.top().address;
 	}
 
@@ -103,15 +104,16 @@
 		    // where here so there was a symbol called name in the past
 		}else if (it->second.empty()){
 			cerr << "error: symbol named " + name + "was popped from its stack" << endl; //TODO : replace cerr with agreed exceptions handling
-
+            throw name;
 			// Table scope closing error: symbol named   name has scope less than current this symbol should have been deleted earlier
 		}else if (it->second.top().scopeID < this->currentTableScopeID){
 		    cerr << "error: symbol named " + name + " has scope less than current when addSymbol tried to add another symbol" <<endl;
-			//throw "error: symbol named " + name + " has scope less than current when addSymbol tried to add another symbol";
+		    throw name;
 
 		    // error: user tried to declare the same symbol twice
 		}else if (it->second.top().scopeID == this->currentTableScopeID){
-			throw "semantic scope error: symbol named " + name + " user tried to declare the same symbol twice in the same scope";
+			cerr << "semantic scope error: symbol named " + name + " user tried to declare the same symbol twice in the same scope";
+			throw name;
 
 			// this symbol has been declared in a bigger scope before, masking
 		}else{ // prev.scopeID > this->currentTableScopeID

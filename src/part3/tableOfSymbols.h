@@ -49,6 +49,7 @@ typedef struct symbol_{
         		 "scopeID: " + to_string(scopeID) +
         		 "address: " + to_string(address) << '\n';
         };
+
 } symbol;
 
 
@@ -70,6 +71,9 @@ private:
 	// removes a symbol and destroys
 	void removeSymbol (string name, int symbolScopeID,);
 */
+
+	bool parsingDeclerations; // true if we are currently parsing a list of new declarations
+
 public:
 
     TableOfSymbols();
@@ -103,6 +107,15 @@ public:
 
 	//prints all elements by that name
 	void print() const;
+
+
+	//get and set for parsing declarations
+	bool isParsingDeclerations() const {
+		return parsingDeclerations; }
+
+	void setParsingDeclerations(bool val){
+		this->parsingDeclerations = val;
+	}
 };
 
 

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include "registersBank.h"
 #include "buffer.h"
+#include "tableOfSymbols.h"
 #include <set>
 #include <algorithm>
 #include <iterator>
