@@ -161,13 +161,12 @@ BLK: DECLARATIONS '{' LIST '}' {
  *                        PROGRAM
  ***********************************************************************************/
 
-DECLARATIONS: TK_var DECLARLIST {
-	//announce that I finished parsing declerations of the current BLK
-	symbolTable.setParsingDeclerations(false);
-	//NOTE: the startNewScope() method was already called by the first DCL
+DECLARATIONS: TK_var {symbolTable.startNewScope();} DECLARLIST {
+	
+	//NOTE: the startNewScope() method was already called before the first DCL
 }
 | /*epsilon*/{
-	// we do not have to announce finish of parsing declerations
+
 }
 ;
 /**********************************************************************************
@@ -187,32 +186,16 @@ DECLARLIST: DECLARLIST DCL ';' {
  ***********************************************************************************/
 
 DCL: TK_id ':' TYPE {
-	//if this is the first DCL to be parsed:
-	if(! symbolTable.isParsingDeclerations()){
-		symbolTable.startNewScope();
-	}
-	//
+//decleration of a REAL or INT
 	
-	symbolTable.setParsingDeclerations(true);
+	
+	
 }
 | TK_id ':' TK_id {
-	//if this is the first DCL to be parsed:
-	if(! symbolTable.isParsingDeclerations()){
-		symbolTable.startNewScope();
-	}
-	//
 	
-	symbolTable.setParsingDeclerations(true);
 }
 | TK_id ',' DCL {
-	//if this is the first DCL to be parsed:
-	if(! symbolTable.isParsingDeclerations()){
-		symbolTable.startNewScope();
-	}
-	//
-	
-	
-	symbolTable.setParsingDeclerations(true);
+
 }
 ;
 /**********************************************************************************

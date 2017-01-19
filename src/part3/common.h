@@ -24,6 +24,7 @@ extern TableOfSymbols symbolTable;
 //no adress
 #define NO_ADDR -1
 
+//merge sets source1 and source2 to a destination set: usage: MERGE(dest,source1,source2);
 #define MERGE(dest, v1,v2) do{ \
 std::set_union(v1.begin(), v1.end(),v2.begin(), v2.end(), std::back_inserter(dest)); \
 	while(0)
