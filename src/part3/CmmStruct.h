@@ -31,7 +31,7 @@ struct CmmStructField {
 	// if the filed is a struct,
 	//then that this is a pointer to its place in the TableOfStructs,
 	//in order to access and verify it's fileds.
-	//else, this pointer is nullptr.
+	//else, this pointer should be set to nullptr.
 	CmmStruct * structDescriptor;
 
 
@@ -43,7 +43,6 @@ struct CmmStructField {
 		if (!isStruct()) return 1;
 		return structDescriptor->getNumFields();
 	}
-
 };
 
 //

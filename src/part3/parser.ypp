@@ -9,7 +9,7 @@
 #include "common.h"
 #include "defintions.h"
 #include "parser.tab.hpp"
-using namespace std;
+	using namespace std;
 	/**********************************************************************************
 	 *                                   Header
 	 ***********************************************************************************/
@@ -90,7 +90,7 @@ using namespace std;
  ***********************************************************************************/
 PROGRAM: TDEFS FDEFS MAIN_FUNCTION
 {
-	
+
 }
 ;
 /**********************************************************************************
@@ -143,7 +143,7 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
 
 MAIN_FUNCTION: TK_main BLK {
 	// each function has its local scope with a clean table of its scope and its inner symbols.
-  //TableOfSymbols localTableOfSymbols;
+	//TableOfSymbols localTableOfSymbols;
 }
 | /*epsilon*/{
 }
@@ -152,7 +152,7 @@ MAIN_FUNCTION: TK_main BLK {
 BLK: DECLARATIONS '{' LIST '}' {
 	// each function has its local scope with a clean table of its scope and its inner symbols.
 	//TableOfSymbols localTableOfSymbols;
-	
+
 	//we reached the end the scope, update symbolTable
 	symbolTable.endScope();
 }
@@ -161,12 +161,27 @@ BLK: DECLARATIONS '{' LIST '}' {
  *                        PROGRAM
  ***********************************************************************************/
 
-DECLARATIONS: TK_var {symbolTable.startNewScope();} DECLARLIST {
+DECLARATIONS: TK_var DECLARLIST {
+//NOTE: the startNewScope() method was already called before the first DCL
+	symbolTable.startNewScope();
+
+	//for every symbol, calc its addr = lastUsedAddr,
+	//update lastUsedAddr += symbol->NumFields
+	//numFeilds = type == INT or REAL ? 1 : structTable-->getnumFields
+
+	for(auto& it : $2.dclNodes){
+		void addSymbol(string name, t_type symType,int address) throw(string);
+
+		
+	}
 	
-	//NOTE: the startNewScope() method was already called before the first DCL
+	//try to add all the parsed symbols to the main symbol table.
+
+	//catch anything : semnatic error.
+
 }
 | /*epsilon*/{
-
+	symbolTable.startNewScope();
 }
 ;
 /**********************************************************************************
@@ -175,9 +190,22 @@ DECLARATIONS: TK_var {symbolTable.startNewScope();} DECLARLIST {
 
 DECLARLIST: DECLARLIST DCL ';' {
 
+	//if DCL is more then one declaration, 
+	//split it into serveral nodes
+	
+	//splice all the lists to DECLARLIST list:
+	$1.dclNodes.splice($1.end(), $2.dclNodes );
+	$$.dclNodes.splice($$.end(), $1.dclNodes );
+	
 }
 
 | DCL ';' {
+//first declaration.
+	//splice the DCL list into DECLARLIST list
+	$$.dclNodes.splice($$.end(), $1.dclNodes );
+	
+	//if it its more then one declaration, 
+	//split it into serveral nodes
 
 }
 ;
@@ -187,14 +215,20 @@ DECLARLIST: DECLARLIST DCL ';' {
 
 DCL: TK_id ':' TYPE {
 //decleration of a REAL or INT
-	
-	
-	
+	//stage1: create a dcl node:
+	DCLnode dcl;
+	dcl.name = $1.value;
+	dcl.type = $3.type;
+	dcl.structDescriptor = NULL;
+	//stage2: push to list
+	$$.dclNodes.push_back(dcl);
 }
 | TK_id ':' TK_id {
-	
+//decleration of struct
+
 }
 | TK_id ',' DCL {
+//more then one declaration in the same line
 
 }
 ;
@@ -210,21 +244,31 @@ TYPE: TK_integer {
 	$$.type = REAL;
 }
 ;
-
-LIST: LIST STMT {
+/**********************************************************************************
+ *                        LIST
+ ***********************************************************************************/
+//added a marker
+LIST: LIST M STMT {
+	/*using backpatch in order to concatenate
+	 all the statesments of the main program.*/
+	$$.nextList = $3.nextList;
+	$3.nextList.clear(); //will be taken care by backpatching the LIST in the next derevation
+	buffer.backpatch($1.nextList, $2.quad);
 }
 | /*epsilon*/
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        STMT
  ***********************************************************************************/
 
 STMT: ASSN
-| CNTRL
-| READ
-| WRITE
-| STMT_RETURN
-| BLK
+| CNTRL {
+	$$.nextList = $1.nextList; //in order to backpatch
+}
+| READ {}
+| WRITE {}
+| STMT_RETURN {}
+| BLK {}
 ;
 /**********************************************************************************
  *                        PROGRAM
@@ -351,26 +395,24 @@ LVAL: TK_id {
 
 	//init LVL:
 	$$.value = name;
-    try
-    {
-    	// set type of EXP :
-    		  $$.type = symbolTable.getType(name);
-    		
-    		
-    		  if($$.type != REAL && $$.type != INT){
-    			//todo:
-    			//means it is a struct, do we have to do something special?
-    		  }
-    		
-    		//both cases
-    		  $$.addr = symbolTable.getAddr(name);	
-    } catch(string e)
-    {
-    	cerr << "Semantic error: undeclared symbol '" << e << "' ";
-    	cerr << "in line number " << to_string(yylineno) << endl;
-    	exit(EXIT_SEMANTIC_FAILURE);
-    }
-	
+	try
+	{
+		// set type of EXP :
+		$$.type = symbolTable.getType(name);
+
+		if($$.type != REAL && $$.type != INT) {
+			//todo:
+			//means it is a struct, do we have to do something special?
+		}
+
+		//both cases
+		$$.addr = symbolTable.getAddr(name);
+	} catch(string e)
+	{
+		cerr << "Semantic error: undeclared symbol '" << e << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
 
 	//anything else?	
 }
@@ -420,7 +462,7 @@ CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
 	 */
 	buffer.backpatch($6.nextList , $2.quad);
 	buffer.backpatch($3.trueList , $5.quad);
-	$$.nestList = $3.falseList ;
+	$$.nestList = $3.falseList;
 	buffer.emit("UJUMP " + to_string($2.quad));
 }
 ;

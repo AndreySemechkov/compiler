@@ -3,6 +3,7 @@
 #include <string.h>
 #include <string>
 #include "common.h"
+#include "definitions.h"
 #include "parser.tab.hpp"
 
 //Helper Functions

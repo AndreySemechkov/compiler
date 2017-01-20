@@ -12,9 +12,10 @@
 #include "buffer.h"
 #include "tableOfSymbols.h"
 #include <set>
+#include <list>
 #include <algorithm>
 #include <iterator>
-
+#include "CmmStruct.h"
 
 
 extern Buffer buffer;
@@ -41,6 +42,8 @@ extern "C" {
 */
 
 
+typedef CmmStructField DCLnode;
+
 /* common struct to use for bison and flex*/
 typedef struct {
 	t_type type;
@@ -49,6 +52,8 @@ typedef struct {
 	int addr; //if the variable is stored in memory, address will represent where (the offset) , else it will be NO_ADDR
 
 
+	//for declarations parsing
+	std::list<DCLnode> dclNodes;
 
 	//for control struts , M,N;
 	int quad;
@@ -56,6 +61,7 @@ typedef struct {
 
 	std::set< int > trueList;
 	std::set< int > falseList;
+
 
 
 } yystype_t;
