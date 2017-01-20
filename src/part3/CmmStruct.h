@@ -9,22 +9,36 @@
 #define CMMSTRUCT_H_
 
 #include "definitions.h"
-#include "tableOfStructs.h"
+//#include "tableOfStructs.h"
 #include <string>
 
-extern class TableOfStructs;
+//class TableOfStructs;
 class CmmStruct;
 
 using namespace std;
 
 
+////
+//// Class CmmSybmol : For the symbol s table.
+////
+////can represent both simple types (INT, REAL) or complex types (structs)
+////
+//class CmmSymbol : public CmmStructField {
+////
 //
-//struct CmmStructField- describes a field of a CmmStruct.
+//	int intStartAddr;
+//	int realStartAddr;
+//}
+
+
+//
+//Class CmmStructField- describes a field of a CmmStruct.
 //
 //note: CmmStructField can be REAL, INT or a previously defined CmmStruct
 //
 struct CmmStructField {
 
+//public:
 	string name;
 	t_type type;
 
@@ -36,13 +50,13 @@ struct CmmStructField {
 
 
 	//returns true if the field is a struct
-	bool isStruct() {
-		return (type != INT && type != REAL);
-	}
-	int getNumFields(){
-		if (!isStruct()) return 1;
-		return structDescriptor->getNumFields();
-	}
+	bool isStruct();
+	int getNumFields();
+
+	int getNumIntFields();
+
+	int getNumRealFields();
+
 };
 
 //
@@ -68,6 +82,9 @@ public:
 
 	//get the number of fields
 	int getNumFields();
+	int getNumIntFields();
+	int getNumRealFields();
+
 
 
 
