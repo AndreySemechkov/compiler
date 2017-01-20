@@ -9,6 +9,7 @@
 #include <iostream>
 #include <stdio.h>
 #include "registersBank.h"
+#include "memHandler.h"
 #include "buffer.h"
 #include "tableOfSymbols.h"
 #include <set>
@@ -20,6 +21,7 @@
 
 extern Buffer buffer;
 extern RegistersBank bank;
+extern MemHandler mem;
 extern TableOfSymbols symbolTable;
 
 //no adress

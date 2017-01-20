@@ -162,26 +162,46 @@ BLK: DECLARATIONS '{' LIST '}' {
  ***********************************************************************************/
 
 DECLARATIONS: TK_var DECLARLIST {
-//NOTE: the startNewScope() method was already called before the first DCL
 	symbolTable.startNewScope();
 
 	//for every symbol, calc its addr = lastUsedAddr,
 	//update lastUsedAddr += symbol->NumFields
 	//numFeilds = type == INT or REAL ? 1 : structTable-->getnumFields
 
-	for(auto& it : $2.dclNodes){
-		void addSymbol(string name, t_type symType,int address) throw(string);
+	for(auto& it : $2.dclNodes) {
 
-		
+		//calculate address:
+		int myAdder;
+
+		//simple types first:
+
+		if(! it.isStruct()) {
+			//if type = real
+			//if type = int
+			myAdder=mem.getMem(it.type);
+		}
+
+		//if type = struct...
+		//TODO:
+
+		//now, add to table:
+		try {
+			symbolTable.addSymbol(it.name , it.type , myAdder);
+		} catch(string e) {
+			cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
+			cerr << " in line number " << to_string(yylineno) << endl;
+			exit(EXIT_SEMANTIC_FAILURE);
+		}
+
 	}
-	
+
 	//try to add all the parsed symbols to the main symbol table.
 
 	//catch anything : semnatic error.
 
 }
 | /*epsilon*/{
-	symbolTable.startNewScope();
+	symbolTable.startNewScope();  // only because we call end scope in BLK
 }
 ;
 /**********************************************************************************
@@ -192,18 +212,18 @@ DECLARLIST: DECLARLIST DCL ';' {
 
 	//if DCL is more then one declaration, 
 	//split it into serveral nodes
-	
+
 	//splice all the lists to DECLARLIST list:
 	$1.dclNodes.splice($1.end(), $2.dclNodes );
 	$$.dclNodes.splice($$.end(), $1.dclNodes );
-	
+
 }
 
 | DCL ';' {
 //first declaration.
 	//splice the DCL list into DECLARLIST list
 	$$.dclNodes.splice($$.end(), $1.dclNodes );
-	
+
 	//if it its more then one declaration, 
 	//split it into serveral nodes
 
@@ -230,6 +250,16 @@ DCL: TK_id ':' TYPE {
 | TK_id ',' DCL {
 //more then one declaration in the same line
 
+	//create a node for the new Id (left)
+	DCLnode dcl;
+	dcl.name = $1.value;
+	dcl.type = $3.dclNodes.begin()->type;
+	dcl.structDescriptor = $3.dclNodes.begin()->structDescriptor;
+
+	//now, splice all the lists (new node + previeous nodes) to $$ list.
+	$$.dclNodes.push_back(dcl);
+	$$.dclNodes.splice($$.end(), $3.dclNodes)
+		
 }
 ;
 /**********************************************************************************
@@ -788,6 +818,8 @@ STREF: TK_id '[' TK_id ']' {
 
 }
 | STREF '[' TK_id ']' {
+	//must be in tor real
+
 }
 ;
 /**********************************************************************************

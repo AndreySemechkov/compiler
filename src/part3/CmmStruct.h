@@ -69,6 +69,8 @@ public:
 	//get the number of fields
 	int getNumFields();
 
+
+
 };
 
 #endif /* CMMSTRUCT_H_ */

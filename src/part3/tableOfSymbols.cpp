@@ -103,6 +103,7 @@
 
 		    // where here so there was a symbol called name in the past
 		}else if (it->second.empty()){
+			//owr internal error
 			cerr << "error: symbol named " + name + "was popped from its stack" << endl; //TODO : replace cerr with agreed exceptions handling
             throw name;
 			// Table scope closing error: symbol named   name has scope less than current this symbol should have been deleted earlier
