@@ -136,8 +136,22 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
  *                        PROGRAM
  ***********************************************************************************/
 
-FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')' BLK {}
+FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
+
+{
+	// A big midrule action , in order to add the function to 
+	//the function table before BLK will be called
+	
+	
+	
+} BLK {
+	
+	
+	
+}
 | FDEFS TK_extern TYPE TK_id '(' FUNC_ARGLIST_FULL ')' ';' {
+	
+	
 	/*concatenate all children to a list*/
 	/*Now, make the father node*/
 }
@@ -170,7 +184,7 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
  *                        PROGRAM
  ***********************************************************************************/
 
-MAIN_FUNCTION: TK_main BLK {
+MAIN_FUNCTION: TK_main {symbolTable.push(TableOfSymbols());} BLK {
 	// each function has its local scope with a clean table of its scope and its inner symbols.
 	//TableOfSymbols localTableOfSymbols;
 }
@@ -182,8 +196,8 @@ BLK: DECLARATIONS '{' LIST '}' {
 	// each function has its local scope with a clean table of its scope and its inner symbols.
 	//TableOfSymbols localTableOfSymbols;
 
-	//we reached the end the scope, update symbolTable
-	symbolTable.endScope();
+	//we reached the end the scope, update symbolTable.top()
+	symbolTable.top().endScope();
 	mem.endBLK();
 }
 ;
@@ -193,7 +207,7 @@ BLK: DECLARATIONS '{' LIST '}' {
 
 DECLARATIONS: TK_var DECLARLIST {
 	mem.startBLK();
-	symbolTable.startNewScope();
+	symbolTable.top().startNewScope();
 
 	//for every symbol, calc its addr = lastUsedAddr,
 	//update lastUsedAddr += symbol->NumFields
@@ -212,7 +226,7 @@ DECLARATIONS: TK_var DECLARLIST {
 			
 			//now, add to table:
 			try {
-				symbolTable.addSymbol(it.second.name , it.second.type , myAdder);
+				symbolTable.top().addSymbol(it.second.name , it.second.type , myAdder);
 			} catch(string e) {
 				cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
 				cerr << " in line number " << it.first << endl;
@@ -243,7 +257,7 @@ DECLARATIONS: TK_var DECLARLIST {
 			//stage3: try to add to table
 			try {
 
-			symbolTable.addSymbolStruct(it.second.name , it.second.type, myINTAddr, myREALAddr );
+			symbolTable.top().addSymbolStruct(it.second.name , it.second.type, myINTAddr, myREALAddr );
 			} catch(string e) {
 				cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
 				cerr << " in line number " << it.first << endl;
@@ -258,7 +272,7 @@ DECLARATIONS: TK_var DECLARLIST {
 
 }
 | /*epsilon*/{
-	symbolTable.startNewScope();  // only because we call end scope in BLK
+	symbolTable.top().startNewScope();  // only because we call end scope in BLK
 }
 ;
 /**********************************************************************************
@@ -512,7 +526,7 @@ LVAL: TK_id {
 	//SEMANTIC CHECKS:
 	//is id in the sybol table?
 	string name = $1.value;
-	bool exists = symbolTable.find(name);
+	bool exists = symbolTable.top().find(name);
 	if(!exists) {
 		cerr << "Semantic error: undeclared symbol '" << name << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
@@ -525,7 +539,7 @@ LVAL: TK_id {
 	try
 	{
 		// set type of EXP :
-		$$.type = symbolTable.getType(name);
+		$$.type = symbolTable.top().getType(name);
 
 		if($$.type != REAL && $$.type != INT) {
 			//todo:
@@ -533,7 +547,7 @@ LVAL: TK_id {
 			//no! it fine we already did a lookup, and we can do it again if needed..
 		}else{
 			//INT,REAL case
-			$$.addr = symbolTable.getAddr(name);
+			$$.addr = symbolTable.top().getAddr(name);
 		}
 	} catch(string e)
 	{
@@ -862,7 +876,7 @@ EXP: EXP TK_addop EXP {
 	$$.value = $1.value;
 
 	//semantics checks:
-	bool exists = symbolTable.find(name);
+	bool exists = symbolTable.top().find(name);
 	if (!exists) {
 		cerr << "Semantic error: undeclared symbol '" << name << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
@@ -870,7 +884,7 @@ EXP: EXP TK_addop EXP {
 	}
 
 	// check if id is int or real:
-	t_type myType = symbolTable.getType(name);
+	t_type myType = symbolTable.top().getType(name);
 	
 	// set type of EXP :
 	$$.type = myType;
@@ -905,7 +919,7 @@ EXP: EXP TK_addop EXP {
 		toEmitLoad+= to_string($$.registerNum);
 	
 		//get adder, in order to load
-		int addr = symbolTable.getAddr(name);
+		int addr = symbolTable.top().getAddr(name);
 		//TODO: should save the addr for EXP ? (I think we should not, so I avoid saving it to avoid errors).
 		//$$.addr = addr;
 		//load to register
@@ -969,20 +983,20 @@ STREF: TK_id '[' TK_id ']' {
 	
 	//lookup id in symbol table	//id is the "father"
 	//verify it exists
-	if(! symbolTable.find($1.value)){
+	if(! symbolTable.top().find($1.value)){
 		cerr << "Semantic error: undeclared symbol '" << $1.value << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
 	//verify its a struct (and not just an INT or REAL)
-	if(! symbolTable.isStruct($1.value)){
+	if(! symbolTable.top().isStruct($1.value)){
 		cerr << "Semantic error: can't STREF. symbol '" << $1.value << "' is not a struct!";
 		cerr << " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	//get its typename, 
-	string typeName = symbolTable.getTypeName($1.value);
+	string typeName = symbolTable.top().getTypeName($1.value);
 	//verify it is a declared struct! 
 	//lookup in structs table
 	std::map<std::string,CmmStruct>::iterator father = structsTable.find(typeName);
@@ -997,8 +1011,8 @@ STREF: TK_id '[' TK_id ']' {
 	
 	//get fathers start adress, and denote it as MS (my start address)
 	 
-	int startAddr_INT = symbolTable.getINTStartAddr($1.value);
-	int startAddr_REAL = symbolTable.getREALStartAddr($1.value);
+	int startAddr_INT = symbolTable.top().getINTStartAddr($1.value);
+	int startAddr_REAL = symbolTable.top().getREALStartAddr($1.value);
 
 		
 	//see if it has a field named id

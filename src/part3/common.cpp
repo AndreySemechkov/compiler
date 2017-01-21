@@ -1,7 +1,7 @@
 /* 046266 Compilation Methods, EE Faculty, Technion                        */
 /* part2_helpers.c - Helper functions for project part 2 - implementation  */
 #include "common.h"
-
+#include <stack>
 
 /**************************************************************************/
 /*                           Globals                                      */
@@ -9,10 +9,10 @@
 
 Buffer buffer;
 RegistersBank bank;
-TableOfSymbols symbolTable;
+std::stack<TableOfSymbols> symbolTable;
 MemHandler mem;
 std::map<std::string,CmmStruct> structsTable;
-
+std::map<std::string, Function> functionsTable;
 
 
 extern int yyparse ();

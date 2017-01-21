@@ -19,12 +19,12 @@
 #include <algorithm>
 #include <iterator>
 #include "CmmStruct.h"
-
+#include "Function.h"
 
 extern Buffer buffer;
 extern RegistersBank bank;
 extern MemHandler mem;
-extern TableOfSymbols symbolTable;
+extern std::stack<TableOfSymbols> symbolTable;
 extern std::map<std::string,CmmStruct> structsTable ;
 
 //extern "C" {
