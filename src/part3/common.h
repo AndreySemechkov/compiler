@@ -26,6 +26,9 @@ extern RegistersBank bank;
 extern MemHandler mem;
 extern std::stack<TableOfSymbols> symbolTable;
 extern std::map<std::string,CmmStruct> structsTable ;
+extern std::map<std::string, Function> functionsTable;
+
+
 
 //extern "C" {
 	// int yylex();
@@ -71,7 +74,6 @@ typedef struct {
 	int REALaddr;
 
 	CmmStructField * oldFieldD;
-
 
 
 } yystype_t;

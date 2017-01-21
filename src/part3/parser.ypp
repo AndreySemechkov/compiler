@@ -142,7 +142,53 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	// A big midrule action , in order to add the function to 
 	//the function table before BLK will be called
 	
+	Function f;
+	f.returnType = $2.type;	
+	f.name = $3.value;
 	
+	//TODO: startLine? offset?
+
+	//assert that the the type is INT or REAL
+	if(f.returnType != INT && f.returnType != REAL){
+		//semantic error
+		cerr << "Semantic error: Function return type must be INT or REAL.";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+		
+	}
+	
+	//check DCL nodes:
+	//for uniqueness.
+	
+	int i =0;
+	for( auto& it : $5.dclNodes){
+		
+		FunctionSymbol sym;
+		sym.name = it.second.name;
+		sym.type = it.second.type;
+		sym.offset = i + INITIAL_OFFSET;
+		++i;
+		
+		try{
+			f.addSymbol(sym);
+		}catch(string err){
+			
+			cerr << "Semantic error: " << err ;
+			cerr << " in line number " << it.first << endl;
+			exit(EXIT_SEMANTIC_FAILURE);
+			
+		}
+		
+	}
+	
+	if(functionsTable.find(f.name) != functionsTable.end()){
+		cerr << "Semantic error: Multiple declarations of function `" + f.name + "`";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}else{
+		
+		functionsTable.insert(std::make_pair(f.name , f ));
+	}
 	
 } BLK {
 	
@@ -150,6 +196,8 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	
 }
 | FDEFS TK_extern TYPE TK_id '(' FUNC_ARGLIST_FULL ')' ';' {
+	
+	//TODO:
 	
 	
 	/*concatenate all children to a list*/
@@ -163,8 +211,14 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
  ***********************************************************************************/
 
 FUNC_ARGLIST_FULL: FUNC_ARGLIST {
+	
+	$$.dclNodes= $1.dclNodes;
+	
 }
 | /*epsilon*/{
+	$$.dclNodes = std::list<std::pair<string,DCLnode> > (); // empty list...
+	
+	//no params
 }
 ;
 /**********************************************************************************
@@ -172,12 +226,33 @@ FUNC_ARGLIST_FULL: FUNC_ARGLIST {
  ***********************************************************************************/
 
 FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
-	/*concatenate all children to a list*/
-	/*Now, make the father node*/
 
+	//check types
+	if($3.type != REAL && $3.type != INT){
+		
+		cerr << "Semantic error: Function arguments be INT or REAL.";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	//concatinate
+	$1.dclNodes.splice($1.dclNodes.end(), $3.dclNodes );
+	$$.dclNodes = $1.dclNodes;
+	
+	
 }
 | DCL {
-
+	
+	//check types:
+	if($1.type != REAL && $1.type != INT){
+		
+		cerr << "Semantic error: Function arguments be INT or REAL.";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+		
+	}
+	//add to list
+	$$.dclNodes = $1.dclNodes ;
 }
 ;
 /**********************************************************************************
@@ -293,9 +368,9 @@ DECLARLIST: DECLARLIST DCL ';' {
 //first declaration.
 	//splice the DCL list into DECLARLIST list
 	$$.dclNodes = $1.dclNodes ;
-
 	//if it its more then one declaration, 
 	//split it into serveral nodes
+	
 }
 ;
 /**********************************************************************************
