@@ -301,8 +301,24 @@ DCL: TK_id ':' TYPE {
 | TK_id ':' TK_id {
 //decleration of struct
 	
-	//TODO:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// fist check that the stuct exists in the structs table
+	std::map<std::string,CmmStruct>::iterator it structsTable.find($3.value);
 	
+	//not found
+	if(it==structsTable.end()){
+		//semantic error
+		cerr << "Semantic error: '" << $3.value << "' does not name a type";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	//stage1: create a dcl node:
+		DCLnode dcl;
+		dcl.name = $1.value;
+		dcl.type = $3.type;
+		dcl.structDescriptor = &(it->second)
+	//stage2: push to list
+		$$.dclNodes.push_back(std::make_pair(to_string(yylineno),dcl));
 
 }
 | TK_id ',' DCL {
