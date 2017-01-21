@@ -272,14 +272,13 @@ DECLARLIST: DECLARLIST DCL ';' {
 
 	//splice all the lists to DECLARLIST list:
 	$1.dclNodes.splice($1.dclNodes.end(), $2.dclNodes );
-	$$.dclNodes.splice($$.dclNodes.end(), $1.dclNodes );
-
+	$$.dclNodes = $1.dclNode;
 }
 
 | DCL ';' {
 //first declaration.
 	//splice the DCL list into DECLARLIST list
-	$$.dclNodes.splice($$.dclNodes.end(), $1.dclNodes );
+	$$.dclNodes = $1.dclNodes ;
 
 	//if it its more then one declaration, 
 	//split it into serveral nodes
@@ -301,6 +300,9 @@ DCL: TK_id ':' TYPE {
 }
 | TK_id ':' TK_id {
 //decleration of struct
+	
+	//TODO:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	
 
 }
 | TK_id ',' DCL {
@@ -447,7 +449,7 @@ ASSN: LVAL TK_assign EXP ';' {
 	//set type
 	$$.type = $1.type;
 
-	//case 1 : EXP is REAL or INT
+	//case 1 : type is REAL or INT
 	if($$.type == REAL || $$.type == INT) {
 
 		// assign value to lval memory.
@@ -472,30 +474,17 @@ ASSN: LVAL TK_assign EXP ';' {
 		}
 		
 		//now, do the job
+		int left_int_start_addr = $1.INTaddr;
+		int left_real_start_addr = $1.REALaddr;
+		int right_int_start_addr = $3.INTaddr;
+		int right_real_start_addr = $3.REALaddr;
 		
-		//ALG : structs assinment
-		//input : 2 lists - structs fields lists.
+		assignStructs(sdLeft, 
+				left_int_start_addr, 
+				left_real_start_addr, 
+				right_int_start_addr, right_real_start_addr);
 		
-		//go over both structs fields list:
-			//for every feild:
-				//if its a simple type - transfer 
-				//if its a struct type, call the algorighm recusivly with the lists.
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-	
 	}
-	//TODO:
-
 }
 ;
 /**********************************************************************************
@@ -902,7 +891,7 @@ EXP: EXP TK_addop EXP {
 		//get adder, in order to load
 		int addr = symbolTable.getAddr(name);
 		//TODO: should save the addr for EXP ? (I think we should not, so I avoid saving it to avoid errors).
-	
+		//$$.addr = addr;
 		//load to register
 		buffer.emit(toEmitLoad + " 0 " + to_string(addr));//FIXME: check if the address is right
 	}
