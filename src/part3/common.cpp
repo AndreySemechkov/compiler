@@ -13,6 +13,8 @@ std::stack<TableOfSymbols> symbolTable;
 MemHandler mem;
 std::map<std::string,CmmStruct> structsTable;
 std::map<std::string, Function> functionsTable;
+std::stack<t_type> currentFunctionReturnType;
+bool isMain;
 
 
 extern int yyparse ();

@@ -21,13 +21,13 @@ void Buffer::emit(const string& command){
 void Buffer::backpatch(set<int> lineNums , int address){
 	string addressString = to_string(address);
 	for (auto num : lineNums) {
-        bufferLines[num] += addressString;
+        bufferLines[num-1] += addressString;
 	}
 }
 
 // return: buffer size
 int Buffer::nextQuad(){
-	return bufferLines.size();
+	return bufferLines.size() + 1 ;
 }
 
 //prints all buffer lines

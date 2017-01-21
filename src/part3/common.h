@@ -21,13 +21,15 @@
 #include "CmmStruct.h"
 #include "Function.h"
 
+
 extern Buffer buffer;
 extern RegistersBank bank;
 extern MemHandler mem;
 extern std::stack<TableOfSymbols> symbolTable;
 extern std::map<std::string,CmmStruct> structsTable ;
 extern std::map<std::string, Function> functionsTable;
-
+extern std::stack<t_type> currentFunctionReturnType;
+extern bool isMain;
 
 
 //extern "C" {
@@ -74,6 +76,11 @@ typedef struct {
 	int REALaddr;
 
 	CmmStructField * oldFieldD;
+
+
+	//for function calls
+
+	std::list<std::pair<t_type,int>> paramNodes;
 
 
 } yystype_t;

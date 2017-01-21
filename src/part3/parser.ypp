@@ -145,7 +145,8 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	Function f;
 	f.returnType = $2.type;	
 	f.name = $3.value;
-	
+	f.implemented = true;
+	f.startLine = buffer.nextQuad();
 	//TODO: startLine? offset?
 
 	//assert that the the type is INT or REAL
@@ -160,7 +161,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	//check DCL nodes:
 	//for uniqueness.
 	
-	int i =0;
+	int i = 0;
 	for( auto& it : $5.dclNodes){
 		
 		FunctionSymbol sym;
@@ -190,18 +191,72 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 		functionsTable.insert(std::make_pair(f.name , f ));
 	}
 	
-} BLK {
+	//forget temporrary registers! reset register bank!
+	bank = RegistersBank();
 	
-	
-	
-}
-| FDEFS TK_extern TYPE TK_id '(' FUNC_ARGLIST_FULL ')' ';' {
 	
 	//TODO:
 	
 	
-	/*concatenate all children to a list*/
-	/*Now, make the father node*/
+	
+} BLK {
+	
+	//DO ANYTHING? //fixme
+		
+}
+| FDEFS TK_extern TYPE TK_id '(' FUNC_ARGLIST_FULL ')' ';' {
+	// A big midrule action , in order to add the function to 
+	//the function table before BLK will be called
+	
+	Function f;
+	f.returnType = $2.type;	
+	f.name = $3.value;
+	f.implemented = false;
+	f.startLine = UNDEFINED_START_LINE;
+	//TODO: startLine? offset?
+
+	//assert that the the type is INT or REAL
+	if(f.returnType != INT && f.returnType != REAL){
+		//semantic error
+		cerr << "Semantic error: Function return type must be INT or REAL.";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+		
+	}
+	
+	//check DCL nodes:
+	//for uniqueness.
+	
+	int i = 0;
+	for( auto& it : $5.dclNodes){
+		
+		FunctionSymbol sym;
+		sym.name = it.second.name;
+		sym.type = it.second.type;
+		sym.offset = i + INITIAL_OFFSET;
+		++i;
+		
+		try{
+			f.addSymbol(sym);
+		}catch(string err){
+			
+			cerr << "Semantic error: " << err ;
+			cerr << " in line number " << it.first << endl;
+			exit(EXIT_SEMANTIC_FAILURE);
+			
+		}
+		
+	}
+	
+	if(functionsTable.find(f.name) != functionsTable.end()){
+		cerr << "Semantic error: Multiple declarations of function `" + f.name + "`";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}else{
+		
+		functionsTable.insert(std::make_pair(f.name , f ));
+	}
+	
 }
 | /*epsilon*/{
 }
@@ -259,11 +314,22 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
  *                        PROGRAM
  ***********************************************************************************/
 
-MAIN_FUNCTION: TK_main {symbolTable.push(TableOfSymbols());} BLK {
+MAIN_FUNCTION: TK_main {
+	
+	//mid rull atcion:
+	currentFunctionReturnType.push(NONE);
+	symbolTable.push(TableOfSymbols());
+} BLK {
+	currentFunctionReturnType.pop();
+	symbolTable.pop();
+	isMain = true;
+
 	// each function has its local scope with a clean table of its scope and its inner symbols.
 	//TableOfSymbols localTableOfSymbols;
 }
 | /*epsilon*/{
+	isMain = false;
+	
 }
 ;
 
@@ -274,6 +340,9 @@ BLK: DECLARATIONS '{' LIST '}' {
 	//we reached the end the scope, update symbolTable.top()
 	symbolTable.top().endScope();
 	mem.endBLK();
+	
+	//reset register bank - (temporary registers)
+	bank = RegistersBank();
 }
 ;
 /**********************************************************************************
@@ -468,6 +537,25 @@ STMT: ASSN {}
  ***********************************************************************************/
 
 STMT_RETURN: TK_return '(' EXP ')' ';' {
+	
+	if(currentFunctionReturnType.empty() || currentFunctionReturnType.top() == NONE){
+		cerr << "Semantic error: return statement inside main()";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	if($3.type!=currentFunctionReturnType.top()){
+		cerr << "Semantic error: return type does not match expected type ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	string eStore = ($3.type == INT)? "STORI I" : "STORR R";
+	$$.registerNum = bank.getRegister($3.type);
+	buffer.emit(eStore + to_string($$.registerNum) + " I1 -1"); //I1 -- frame PTR
+	buffer.emit("RETRN"); //goto IO
+	//clear tmp registers:
+	bank = RegistersBank();
 }
 ;
 /**********************************************************************************
@@ -1167,18 +1255,87 @@ STREF: TK_id '[' TK_id ']' {
  ***********************************************************************************/
 
 CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
+
+
+	std::map<std::string, Function>::iterator fI = functionsTable.find($2.value);
+	//check that ID exists
+	if(fI == functionsTable.end() ){
+		cerr << "Semantic error: no matching call for function " << $2.value;
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	//check if args types match?
+	
+	std::list<t_type> tmp;
+
+	for (auto& it : $4.paramNodes){
+		tmp.push_back(it.first);
+	}
+	
+	if( fI->second.m_types !=  tmp ){
+		cerr << "Semantic error: parameteres of function call does not match function " << $2.value ;
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+		
+	}
+	
+	
+	//if we got here, then args match!
+	
+	
+	//now, do the job:
+	
+	//take care of stack, etc
+	
+	//get function symbol table
+	//push function symbol table
+	
+	
+	//emit the call
+	
+	
+	
 }
 ;
 
 CALL_ARGS_FULL: CALL_ARGS {
+	$$.paramNodes == $1.paramNodes;
 }
 | /*epsilon*/{
+	
+	$$.paramNodes.clear();
 }
 ;
 
 CALL_ARGS: EXP {
+	//first param node
+	
+	//check if EXP is INT or REAL
+	
+	if($1.type != INT && $1.type != REAL){
+		cerr << "Semantic error: function call parameters must be INT or REAL only! ";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	$$.paramNodes.clear();
+	$$.paramNodes.push_back(std::make_pair($1.type,$1.registerNum));	
+	
 }
 | CALL_ARGS ',' EXP {
+	
+	//check if EXP is INT or REAL
+		
+		if($3.type != INT && $3.type != REAL){
+			cerr << "Semantic error: function call parameters must be INT or REAL only! ";
+			cerr << " in line number " << to_string(yylineno) << endl;
+			exit(EXIT_SEMANTIC_FAILURE);
+		}
+	
+	$$.paramNodes = $1.paramNodes;
+	$$.paramNodes.push_back(std::make_pair($3.type,$3.registerNum));	
+	
 }
 ;
 /**********************************************************************************
