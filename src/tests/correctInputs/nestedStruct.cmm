@@ -1,0 +1,45 @@
+defstruct {
+    a : integer;
+    b : real;
+} s1;
+
+defstruct {
+    a1 : s1;
+    b1 : s1;
+} s2;
+
+defstruct {
+    a2 : s2;
+    b2 : s2;
+} s3;
+
+defstruct {
+    a3 : s3;
+    b3 : s3;
+} s4;
+
+defstruct {
+    a4 : s4;
+    b4 : s4;
+} s5;
+
+defstruct {
+    a5 : s5;
+    b5 : s5;
+} s6;
+
+defstruct {
+    a6 : s6;
+    b6 : s6;
+} s7;
+
+main
+var i1,i2:s7;
+    a : integer;
+{
+    i1[a6][a5][a4][b3][a2][b1][a] = 99;
+    i2 = i1;
+    a = i2[a6][a5][a4][b3][a2][b1][a];
+	if ( a == 99 ) then write("nice\n");
+	else write("else\n");
+}

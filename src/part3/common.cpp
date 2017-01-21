@@ -13,24 +13,44 @@ TableOfSymbols symbolTable;
 MemHandler mem;
 std::map<std::string,CmmStruct> structsTable;
 
-extern "C" {
-	int yyparse (void);
-}
+
+extern "C" int yyparse (void);
+extern "C" void yylex_destroy();
+extern "C"	FILE *yyin;
+extern "C"	int yylex();
+
 /**************************************************************************/
 /*                           Main of parser                               */
 /**************************************************************************/
 
-int main(void)
+int main(int argc, char* argv[])
 {
-    int rc;
+	if(argc != 2)
+	{
+		cerr << "Operational error: ";
+		cerr << "Invalid number of arguments!" << endl;
+	    exit(EXIT_OPERATIONAL_FAILURE);
+	}
+    string inputCodeName = argv[1];
+
+    if(inputCodeName.substr(inputCodeName.find_last_of("."),4) != ".cmm")
+    {
+    	  cerr << "Operational error: ";
+    	  cerr << "Invalid argument!" << endl;
+    	  exit(EXIT_OPERATIONAL_FAILURE);
+    }
+
 #if YYDEBUG
     yydebug=1;
 #endif
-    rc = yyparse();
-    if (rc == 0) { // Parsed successfully
-//TODO:
+    yyin = fopen(argv[1],"r");
+    int rs;
+    rs = yyparse();
+    if (rs == 0) { // Parsed successfully
+      buffer.printRiski(inputCodeName);
     }
+    fclose(yyin);
+    yylex_destroy();
 
-
-
+return 0;
 }

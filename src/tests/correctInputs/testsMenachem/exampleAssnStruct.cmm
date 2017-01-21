@@ -1,0 +1,17 @@
+defstruct {
+    a : integer;
+    b : real;
+    c, d: integer;
+} a;
+
+main
+var a:a;
+    b:a;
+{
+	a[a] = 1;
+	a[b] = 2.0;
+	a[c] = 3;
+	a[d] = 4;
+	b = a;
+	if ( b[a] == 1 && b[b] == 2.0 && b[c] == 3 && b[d] == 4 ) then write("nice\n");
+}

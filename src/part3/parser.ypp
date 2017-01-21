@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "common.h"
-#include "defintions.h"
+#include "definitions.h"
 #include "parser.tab.hpp"
-	using namespace std;
+using namespace std;
 	/**********************************************************************************
 	 *                                   Header
 	 ***********************************************************************************/
@@ -22,8 +22,6 @@
 		 int yylex();
 		 char* yytext;
 		 int yylineno;
-		 void yyerror(const char* msg);
-
 	}
 	void yyerror(const char* msg);
 	%}
@@ -344,7 +342,7 @@ LIST: LIST M STMT {
 	$3.nextList.clear(); //will be taken care by backpatching the LIST in the next derevation
 	buffer.backpatch($1.nextList, $2.quad);
 }
-| /*epsilon*/ {}
+| /*epsilon*/{}
 ;
 /**********************************************************************************
  *                        STMT
@@ -408,7 +406,7 @@ WRITE: TK_write '(' EXP ')' ';' {
 READ: TK_read '(' LVAL ')' ';' {
 
 	//check for type semantics
-	if($3.type != INT && $.type != REAL) {
+	if($3.type != INT && $3.type != REAL) {
 		//semantic error - read exept only INT or REAL
 		cerr << "Semantic error:"
 		<< " READ expecting types: REAL or INT "
@@ -428,7 +426,7 @@ READ: TK_read '(' LVAL ')' ';' {
 	//compute string to emit
 	string toEmitStore = ($3.type == INT) ? "STORI I" : "STORR R";
 	toEmitStore+= to_string(reg);
-	toEmitStore = toEmitStore + " " + to_string($3.adder) + " 0";//the LVAL is in memmorry, addr stores where //FIXME:
+	toEmitStore = toEmitStore + " " + to_string($3.addr) + " 0";//the LVAL is in memmorry, addr stores where //FIXME:
 
 	//now, do the job
 	buffer.emit(toEmitStore);
@@ -660,7 +658,7 @@ BEXP: BEXP TK_or M BEXP {
 		toEmitBranch = "BREQZ";
 
 	} else if ($2.value == "<>") {
-		toEmitCompare = "SNEQ"
+		toEmitCompare = "SNEQ";
 		toEmitBranch = "BREQZ";
 
 	} else if ($2.value == "<") {
@@ -1111,8 +1109,7 @@ N : /* epsilon */
 %%
 
 // printig an error when no reduction rule can be applied.code 2 of error as requested showind the syntax error details
-void yyerror(const char* msg)
-{
+void yyerror(const char* msg){
 	printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
 	exit(EXIT_SYNTAX_FAILURE);
 }

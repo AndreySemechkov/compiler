@@ -1,0 +1,9 @@
+main
+vaar a:real;
+    b:integer;
+{
+	read(a);
+	read(b);
+	if a < b then write(a);
+	else write(b);
+}

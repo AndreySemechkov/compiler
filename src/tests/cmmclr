@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# this script compiles, linkes and runs cmm files
+
+
+! [ -e ./rx-cc ] && echo "Error - ./rx-cc does not exist" && exit 
+! [ -e ./rx-linker ] && echo "Error - ./rx-linker does not exist" && exit
+! [ -e ./rx-vm ] && echo "Error - ./rx-vm does not exist" && exit
+ 
+i=0
+for filename_cmm in $@; do
+	if [[ $filename_cmm != *.cmm ]]; then
+		echo Illegal filename $filename_cmm. only "*.cmm" files are allowed
+		exit	
+	fi
+	filename_rsk[$i]=${filename_cmm%.cmm}.rsk
+	echo ./rx-cc $filename_cmm
+	./rx-cc $filename_cmm || exit
+	(( i++ ))
+done
+if (( $#==0 )); then 
+	echo no "*.cmm" files entered
+	exit
+fi
+echo ./rx-linker ${filename_rsk[@]}
+./rx-linker ${filename_rsk[@]} || exit
+
+main=${filename_rsk[0]}
+
+echo ./rx-vm ${main%.rsk}.e
+./rx-vm ${main%.rsk}.e

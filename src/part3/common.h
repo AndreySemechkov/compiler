@@ -7,6 +7,8 @@
 #include <string.h>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <stdio.h>
 #include "registersBank.h"
 #include "memHandler.h"
@@ -32,7 +34,7 @@ extern std::map<std::string,CmmStruct> structsTable ;
 #define MERGE(dest, v1,v2) do{ \
 dest.insert(v1.begin(),v1.end()); \
 dest.insert(v2.begin(),v2.end()); \
-}while(0)
+}	while(0)
 
 
 /*

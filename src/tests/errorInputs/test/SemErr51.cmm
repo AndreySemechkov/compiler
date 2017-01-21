@@ -1,0 +1,7 @@
+main
+var a:real;
+    b:integer;
+{
+	a = b;
+
+}

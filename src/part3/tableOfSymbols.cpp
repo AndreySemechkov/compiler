@@ -32,7 +32,7 @@
 	// returns true if a symbol is a struct
 	bool TableOfSymbols::isStruct(string name) const throw(string)
 	{
-		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		map<string,stack<symbol>>::const_iterator it = this->scopeMap.find(name);
 
 		if(it != this->scopeMap.end()){
 			if(it->second.empty()){
@@ -49,14 +49,14 @@
 		// tells whether a symbol is in the table in the current scope
 	bool TableOfSymbols::find(string name) const
 	{
-		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		map<string,stack<symbol>>::const_iterator it = this->scopeMap.find(name);
 		return it != this->scopeMap.end() && !it->second.empty();
 	}
 
 		// returns the type of symbol named name from the table in the current scope
 	t_type TableOfSymbols::getType(string name) const throw(string)
 	{
-		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		map<string,stack<symbol>>::const_iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
 			throw name;
 			//throw " symbol " + name + " does not exist";
@@ -72,17 +72,17 @@
 			//throw " symbol " + name + " does not exist";
 		return it->second.top().address;
 	}
-
+/*
 	void TableOfSymbols::print() const
 	{
 		cout << "current Table scope id: " + to_string(this->currentTableScopeID) << '\n';
 		cout << "current Table symbols: " << '\n';
-		for (map<string,stack<symbol>>::iterator it = scopeMap.begin(); it != scopeMap.end(); it++) {
+		for (map<string,stack<symbol>>::const_iterator it = scopeMap.begin(); it != scopeMap.end(); it++) {
 		    cout << "name: " + it->first << '\n' << " top symbol: ";
 			it->second.top().print();
 		}
 	}
-
+*/
 	// adds a new symbol name name to the current scope
 	void TableOfSymbols::addSymbol(string name, t_type symType,int address) throw(string)
 	{

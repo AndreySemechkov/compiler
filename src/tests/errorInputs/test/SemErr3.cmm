@@ -1,0 +1,12 @@
+defstruct {
+    fl1 : integer;
+    anotherFl : real;
+    oneMore, twoMore: integer;
+} Myst;
+
+main
+var a:Myst;
+    b:integer;
+{
+	write(a);
+}

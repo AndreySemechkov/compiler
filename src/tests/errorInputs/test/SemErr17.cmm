@@ -1,0 +1,18 @@
+real power (c:real, m:integer)
+var c:real;
+{
+    return(c);
+}
+
+
+
+main
+var a:real;
+    b:real;
+    n:real;
+{
+    read(a);
+    read(n);
+    n=call power (a,(integer)n);
+    write(b);
+}

@@ -1,0 +1,5 @@
+integer dofib(a:integer)
+{
+	if (a == 1 || a == 2) then return (1);
+	return (call dofib(a-1) + call dofib(a-2));
+}

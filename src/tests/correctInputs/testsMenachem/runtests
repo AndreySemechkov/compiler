@@ -1,0 +1,33 @@
+#!/bin/bash
+#/home/noga/EclipseProjectsCpp/compiler/src/tests/correctInputs/testsMenachem
+make clean
+make
+echo starting iftest1 
+./rx-cc example1.cmm && ./rx-linker example1.rsk && ./rx-vm example1.e  
+#./rx-cc iftest1.cmm && ./rx-linker iftest1.rsk && ./rx-vm iftest1.e | diff iftest1.out - && \  
+#echo iftest1 passed.
+#echo starting iftest2 && \
+#./rx-cc iftest2.cmm  && ./rx-linker iftest2.rsk && ./rx-vm iftest2.e | diff iftest2.out - && \ 
+#echo iftest2 passed. && \
+#echo starting iftest3 && \
+#./rx-cc iftest3.cmm && ./rx-linker iftest3.rsk && ./rx-vm iftest3.e | diff iftest3.out - && \
+#echo iftest3 passed. && \
+#echo starting iftest4 && \
+#./rx-cc iftest4.cmm  && ./rx-linker iftest4.rsk && ./rx-vm iftest4.e | diff iftest4.out - && \
+#echo iftest4 passed. && \
+#echo starting whiletest && \
+#./rx-cc whiletest.cmm && ./rx-linker whiletest.rsk && ./rx-vm whiletest.e | diff whiletest.out - && \ 
+#echo whiletst passed. && \
+#echo starting example3 test && \
+#./rx-cc example3-main.cmm && ./rx-cc example3-funcs.cmm && ./rx-linker example3-main.rsk example3-funcs.rsk && ./rx-vm example3-main.e | diff #example3-main.out - && \
+#echo example3 test passed. && \
+#echo starting exampleAssnStruct && \
+#./rx-cc exampleAssnStruct.cmm && ./rx-linker exampleAssnStruct.rsk && ./rx-vm exampleAssnStruct.e | diff exampleAssnStruct.out - && \
+#echo exampleAssnStruct test passed. && \
+#echo starting nestedSruct && \
+#./rx-cc nestedStruct.cmm && ./rx-linker nestedStruct.rsk && ./rx-vm nestedStruct.e | diff nestedStruct.out - && \
+#echo exmpleAssnStruct test passed. && \
+#echo starting fib test && \
+#./rx-cc fib-main.cmm && ./rx-cc fib-for.cmm && ./rx-cc fib-calc.cmm && ./rx-linker fib-main.rsk fib-for.rsk fib-calc.rsk && ./rx-vm fib-main.e #| diff fib-main.out - && \
+#echo fib test passed. && \
+#echo all tests passed!

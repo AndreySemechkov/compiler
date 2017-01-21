@@ -37,6 +37,22 @@ void Buffer::print(){
 	}
 }
 
+// print out the buffer into a .riksi file
+	void Buffer::printRiski(string filename)
+	{
+      string filenameOut = filename.substr(0,filename.length()-4) + ".rsk";
+	  cout << filenameOut << endl;
+      ofstream myfile;
+      myfile.open(filenameOut.c_str());
+      for (auto line : this->bufferLines) {
+    	  myfile << line << endl;
+	   }
+      myfile.close();
+	}
+
+
+
+
 
 
 

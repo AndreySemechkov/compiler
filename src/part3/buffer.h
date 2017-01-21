@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <fstream>
 
 using namespace std;
 
@@ -32,6 +33,8 @@ public:
 	//prints all buffer lines
 	void print();
 
+	// print out the buffer into a .riksi file
+	void printRiski(string filename);
 	// return the line number of the next quad;
 	int nextQuad();
 };

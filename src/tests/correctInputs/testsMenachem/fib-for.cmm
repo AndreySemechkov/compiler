@@ -1,0 +1,16 @@
+extern integer dofib(a:integer);
+
+integer dofor(a:integer)
+var b:integer;
+{
+	write("printing ");
+	write(a);
+	write("first numbers of the Fibonacci series\n");
+	b=1;
+	while (b<=a) do {
+		write(call dofib(b));
+		if ( b <> a) then write(",");
+		b = b+1;
+	}
+	write("\n");
+}

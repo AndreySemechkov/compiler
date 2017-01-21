@@ -1,0 +1,12 @@
+integer foo2()
+{
+  return (1);
+}
+
+integer foo(c: integer)
+var e:integer;
+{
+  e = call foo2 ();
+  e = e + c;
+  return (e);
+}

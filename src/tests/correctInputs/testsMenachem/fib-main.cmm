@@ -1,0 +1,10 @@
+extern integer dofor(a:integer);
+extern integer dofib(a:integer);
+
+main
+var a:integer; b:integer;
+{
+    //read(a);
+    a = 20;
+    b = call dofor(a);
+}

@@ -1,0 +1,14 @@
+main
+var i, n:integer;
+{
+	i=0;
+	n=100;
+	while i<n do {
+		write(i);
+		if (i == (i/2)*2) then {
+			write ("is even\n");
+		}
+		else write("is odd\n");
+		i=i+1;
+	}
+}

@@ -1,0 +1,24 @@
+defstruct {
+    fl1 : integer;
+    anotherFl : real;
+    oneMore, twoMore: integer;
+} Myst;
+
+real power (c:real, m:integer)
+var d:real;
+{
+    return(d);
+}
+
+
+
+main
+var a:real;
+    b:Myst;
+    n:real;
+{
+    read(a);
+    read(n);
+    n=call power (a,(integer)n);
+    read(b);
+}
