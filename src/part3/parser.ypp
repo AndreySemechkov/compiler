@@ -121,12 +121,12 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 	//verify that struct name is unique
 	if(structsTable.find($6.value) != structsTable.end()){
 		cerr << "Semantic error: " << "multiple definitions of struct name " + $6.value ;
-		cerr << " in line number " << it.first << endl;
+		cerr << " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
 	//now, do the job!
-	myStruct.name = $6.value;
+	myStruct.m_name = $6.value;
 	structsTable.insert(std::make_pair($6.value, myStruct));
 	
 }
@@ -461,12 +461,12 @@ ASSN: LVAL TK_assign EXP ';' {
 	//case 2: assignment between structs 
 		
 		//2.1 : verify that they are struct from the same type:
-		sdLeft = $1.oldFieldD->structDescriptor;
-		sdRight = $3.oldFieldD->structDescriptor;
+		CmmStruct* sdLeft = $1.oldFieldD->structDescriptor;
+		CmmStruct* sdRight = $3.oldFieldD->structDescriptor;
 		
 		//TODO: maybe assert they are not NULL? although this should not happen.
 		
-		if(sdLeft->name != sdRight->name){			
+		if(sdLeft->m_name != sdRight->m_name){			
 			cerr << "Semantic error:"
 			<< " ASSN expecting same types "
 			<< " in line number " << to_string(yylineno) << endl;
@@ -562,14 +562,14 @@ LVAL: TK_id {
  *                        CNTRL
  ***********************************************************************************/
 
-CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
+CNTRL: TK_if BEXP TK_then M STMT TK_else N M STMT {
 	/* $1 if
 	 * $2 B
 	 * $3 then
 	 * $4 M1
 	 * $5 S1
-	 * $6 N
-	 * $7 else
+	 * $6 else
+	 * $7 N
 	 * $8 M2
 	 * $9 S2
 	 */
@@ -577,7 +577,7 @@ CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
 	buffer.backpatch($2.falseList, $8.quad);
 	// merge all three to S list
 	set<int> tmp;
-	MERGE(tmp, $5.nextList, $6.nextList);
+	MERGE(tmp, $5.nextList, $7.nextList);
 	MERGE($$.nextList, tmp, $9.nextList);
 }
 | TK_if BEXP TK_then M STMT {
