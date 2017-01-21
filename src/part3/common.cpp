@@ -82,6 +82,7 @@ void assignStructs(list<CmmStructField>& left,
 
 		switch(li->type){
 		case INT:
+			{
 			int lAddr = li->INToffsetInsideStruct + left_int_start_addr;
 			int rAddr = li->INToffsetInsideStruct + right_int_start_addr;
 
@@ -97,24 +98,27 @@ void assignStructs(list<CmmStructField>& left,
 			buffer.emit(eLoad);
 			buffer.emit(eStore);
 			break;
+			}
 		case REAL:
-			int lAddr = li->REALoffsetInsideStruct + left_real_start_addr;
-			int rAddr = li->REALoffsetInsideStruct + right_real_start_addr;
+			{
+			int lAddrR = li->REALoffsetInsideStruct + left_real_start_addr;
+			int rAddrR = li->REALoffsetInsideStruct + right_real_start_addr;
 
 			int reg = bank.getRegister(REAL);
 
 			//load to reg
-			string eLoad = "LOADR R" + to_string(reg) + " " + to_string(rAddr) + " 0";
+			string eLoadR = "LOADR R" + to_string(reg) + " " + to_string(rAddrR) + " 0";
 
 			//strore from reg to mem.
-			string eStore = "STORR R" + to_string(reg) + " " + to_string(lAddr) + " 0";
+			string eStoreR = "STORR R" + to_string(reg) + " " + to_string(lAddrR) + " 0";
 
 			//now, emit
-			buffer.emit(eLoad);
-			buffer.emit(eStore);
+			buffer.emit(eLoadR);
+			buffer.emit(eStoreR);
 			break;
-
+			}
 		default: //struct!
+			{
 			//call recusivly!
 
 			//prep addrs
@@ -128,6 +132,7 @@ void assignStructs(list<CmmStructField>& left,
 			//now do the job
 			assignStructs(li->structDescriptor->m_fields_list,
 					l_int_start_Addr,l_real_start_Addr,r_int_start_Addr,r_real_start_Addr);
+			}
 		}
 
 	}

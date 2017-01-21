@@ -6,154 +6,153 @@ var a0,a1:real;
 	a1 = 2.5;
 	b0 = 1;
 	b1 = 2;
+	if b0 < b1 then {
+		write(b0);
+		write("<");
+		write(" ");
+		write(b1);
+		write("\n");
+	}
+	if b0 > b1 then {
+		write(b0);
+		write(">");
+		write(" ");
+		write(b1);
+		write("\n");
+	}
+	if b0 <> b1 then {
+		write(b0);
+		write("<>");
+		write(" ");
+		write(b1);
+		write("\n");
+	}
+	if b0 == b1 then {
+		write(b0);
+		write("==");
+		write(" ");
+		write(b1);
+		write("\n");
+	}
+	if b0 >= b1 then {
+		write(b0);
+		write(">=");
+		write(" ");
+		write(b1);
+		write("\n");
+	}
+	if b0 <= b1 then {
+		write(b0);
+		write("<=");
+		write(" ");
+		write(b1);
+		write("\n");
+	}
+	if a0 < a1 then {
+		write(a0);
+		write("<");
+		write(" ");
+		write(a1);
+		write("\n");
+	}
+	if a0 > a1 then {
+		write(a0);
+		write(">");
+		write(" ");
+		write(a1);
+		write("\n");
+	}
+	if a0 <> a1 then {
+		write(a0);
+		write("<>");
+		write(" ");
+		write(a1);
+		write("\n");
+	}
+	if a0 == a1 then {
+		write(a0);
+		write("==");
+		write(" ");
+		write(a1);
+		write("\n");
+	}
+	if a0 >= a1 then {
+		write(a0);
+		write(">=");
+		write(" ");
+		write(a1);
+		write("\n");
+	}
+	if a0 <= a1 then {
+		write(a0);
+		write("<=");
+		write(" ");
+		write(a1);
+		write("\n");
+	}
+	if (b0 < b1 && a0 < a1) then
+	{
+		write(b0);
+		write(" < ");
+		write(b1);
+		write(" and ");
+		write(a0);
+		write(" < ");
+		write(a1);
+		write("\n");
+	}
+	else if (b0 >= b1 && a0 < a1) then
+	{
+		write(b0);
+		write(" >= ");
+		write(b1);
+		write(" and ");
+		write(a0);
+		write(" < ");
+		write(a1);
+		write("\n");
+	}
+	else if (b0 < b1 && a0 >= a1) then
+	{
+		write(b0);
+		write(" < ");
+		write(b1);
+		write(" and ");
+		write(a0);
+		write(" >= ");
+		write(a1);
+		write("\n");
+	}
+	else {
+		write(b0);
+		write(" >= ");
+		write(b1);
+		write(" and ");
+		write(a0);
+		write(" >= ");
+		write(a1);
+		write("\n");
+	}
+	if (b0 < b1 || a0 < a1) then
+	{
+		write(b0);
+		write(" < ");
+		write(b1);
+		write(" or ");
+		write(a0);
+		write(" < ");
+		write(a1);
+		write("\n");
+	}
+	else 
+	{
+		write(b0);
+		write(" >= ");
+		write(b1);
+		write(" and ");
+		write(a0);
+		write(" >= ");
+		write(a1);
+		write("\n");
+	}
 }
-//	if b0 < b1 then {
-//		write(b0);
-//		write("<");
-//		write(" ");
-//		write(b1);
-//		write("\n");
-//	}
-//	if b0 > b1 then {
-//		write(b0);
-//		write(">");
-//		write(" ");
-//		write(b1);
-//		write("\n");
-//	}
-//	if b0 <> b1 then {
-//		write(b0);
-//		write("<>");
-//		write(" ");
-//		write(b1);
-//		write("\n");
-//	}
-//	if b0 == b1 then {
-//		write(b0);
-//		write("==");
-//		write(" ");
-//		write(b1);
-//		write("\n");
-//	}
-//	if b0 >= b1 then {
-//		write(b0);
-//		write(">=");
-//		write(" ");
-//		write(b1);
-//		write("\n");
-//	}
-//	if b0 <= b1 then {
-//		write(b0);
-//		write("<=");
-//		write(" ");
-//		write(b1);
-//		write("\n");
-//	}
-//	if a0 < a1 then {
-//		write(a0);
-//		write("<");
-//		write(" ");
-//		write(a1);
-//		write("\n");
-//	}
-//	if a0 > a1 then {
-//		write(a0);
-//		write(">");
-//		write(" ");
-//		write(a1);
-//		write("\n");
-//	}
-//	if a0 <> a1 then {
-//		write(a0);
-//		write("<>");
-//		write(" ");
-//		write(a1);
-//		write("\n");
-//	}
-//	if a0 == a1 then {
-//		write(a0);
-//		write("==");
-//		write(" ");
-//		write(a1);
-//		write("\n");
-//	}
-//	if a0 >= a1 then {
-//		write(a0);
-//		write(">=");
-//		write(" ");
-//		write(a1);
-//		write("\n");
-//	}
-//	if a0 <= a1 then {
-//		write(a0);
-//		write("<=");
-//		write(" ");
-//		write(a1);
-//		write("\n");
-//	}
-//	if (b0 < b1 && a0 < a1) then
-//	{
-//		write(b0);
-//		write(" < ");
-//		write(b1);
-//		write(" and ");
-//		write(a0);
-//		write(" < ");
-//		write(a1);
-//		write("\n");
-//	}
-//	else if (b0 >= b1 && a0 < a1) then
-//	{
-//		write(b0);
-//		write(" >= ");
-//		write(b1);
-//		write(" and ");
-//		write(a0);
-//		write(" < ");
-//		write(a1);
-//		write("\n");
-//	}
-//	else if (b0 < b1 && a0 >= a1) then
-//	{
-//		write(b0);
-//		write(" < ");
-//		write(b1);
-//		write(" and ");
-//		write(a0);
-//		write(" >= ");
-//		write(a1);
-//		write("\n");
-//	}
-//	else {
-//		write(b0);
-//		write(" >= ");
-//		write(b1);
-//		write(" and ");
-//		write(a0);
-//		write(" >= ");
-//		write(a1);
-//		write("\n");
-//	}
-//	if (b0 < b1 || a0 < a1) then
-//	{
-//		write(b0);
-//		write(" < ");
-//		write(b1);
-//		write(" or ");
-//		write(a0);
-//		write(" < ");
-//		write(a1);
-//		write("\n");
-//	}
-//	else 
-//	{
-//		write(b0);
-//		write(" >= ");
-//		write(b1);
-//		write(" and ");
-//		write(a0);
-//		write(" >= ");
-//		write(a1);
-//		write("\n");
-//	}
-//}

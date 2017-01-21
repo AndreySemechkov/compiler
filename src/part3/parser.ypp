@@ -272,7 +272,7 @@ DECLARLIST: DECLARLIST DCL ';' {
 
 	//splice all the lists to DECLARLIST list:
 	$1.dclNodes.splice($1.dclNodes.end(), $2.dclNodes );
-	$$.dclNodes = $1.dclNode;
+	$$.dclNodes = $1.dclNodes;
 }
 
 | DCL ';' {
@@ -479,7 +479,7 @@ ASSN: LVAL TK_assign EXP ';' {
 		int right_int_start_addr = $3.INTaddr;
 		int right_real_start_addr = $3.REALaddr;
 		
-		assignStructs(sdLeft, 
+		assignStructs(sdLeft->m_fields_list, 
 				left_int_start_addr, 
 				left_real_start_addr, 
 				right_int_start_addr, right_real_start_addr);

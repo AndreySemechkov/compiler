@@ -21,19 +21,6 @@ class CmmStruct;
 using namespace std;
 
 
-////
-//// Class CmmSybmol : For the symbol s table.
-////
-////can represent both simple types (INT, REAL) or complex types (structs)
-////
-//class CmmSymbol : public CmmStructField {
-////
-//
-//	int intStartAddr;
-//	int realStartAddr;
-//}
-
-
 //
 //Class CmmStructField- describes a field of a CmmStruct.
 //
@@ -68,7 +55,6 @@ struct CmmStructField {
 //
 //  assignStructs - function for assignment between structs
 //
-//extern void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right);
 
 
 //
@@ -101,8 +87,11 @@ public:
 
 	//assigment between structs
 
-	friend void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right );
-
+	friend void assignStructs(list<CmmStructField>& left,
+		int left_int_start_addr ,
+		int left_real_start_addr,
+		int right_int_start_addr ,
+		int right_real_start_addr);
 
 };
 

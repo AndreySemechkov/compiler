@@ -79,8 +79,11 @@ typedef struct {
 #define YYSTYPE yystype_t 
 
 
-
-
+void assignStructs(list<CmmStructField>& left,
+		int left_int_start_addr ,
+		int left_real_start_addr,
+		int right_int_start_addr ,
+		int right_real_start_addr);
 
 
 
