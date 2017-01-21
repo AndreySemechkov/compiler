@@ -23,14 +23,16 @@ extern Buffer buffer;
 extern RegistersBank bank;
 extern MemHandler mem;
 extern TableOfSymbols symbolTable;
+extern std::map<std::string,CmmStruct> structsTable ;
 
 //no adress
 #define NO_ADDR -1
 
 //merge sets source1 and source2 to a destination set: usage: MERGE(dest,source1,source2);
 #define MERGE(dest, v1,v2) do{ \
-std::set_union(v1.begin(), v1.end(),v2.begin(), v2.end(), std::back_inserter(dest)); \
-	while(0)
+dest.insert(v1.begin(),v1.end()); \
+dest.insert(v2.begin(),v2.end()); \
+}while(0)
 
 
 /*
@@ -55,14 +57,23 @@ typedef struct {
 
 
 	//for declarations parsing
-	std::list<DCLnode> dclNodes;
+	std::list<std::pair<string,DCLnode> > dclNodes;
 
-	//for control struts , M,N;
+	//for control statements and backpatching , M,N;
 	int quad;
 	std::set< int > nextList;
 
 	std::set< int > trueList;
 	std::set< int > falseList;
+
+	//for STREF
+	int INToffsetInsideStruct;
+	int REALoffsetInsideStruct;
+
+	int INTaddr;
+	int REALaddr;
+
+	CmmStructField * oldFieldD;
 
 
 

@@ -11,8 +11,11 @@ Buffer buffer;
 RegistersBank bank;
 TableOfSymbols symbolTable;
 MemHandler mem;
+std::map<std::string,CmmStruct> structsTable;
 
-extern int yyparse (void);
+extern "C" {
+	int yyparse (void);
+}
 /**************************************************************************/
 /*                           Main of parser                               */
 /**************************************************************************/

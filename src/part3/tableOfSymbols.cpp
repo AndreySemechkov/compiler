@@ -66,7 +66,7 @@
 		// returns the address of symbol named name from the table in the current scope
 	int TableOfSymbols::getAddr(string name) const throw(string)
 	{
-		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		map<string,stack<symbol>>::const_iterator it = this->scopeMap.find(name);
 		if(it == this->scopeMap.end())
 			throw name;
 			//throw " symbol " + name + " does not exist";
@@ -131,12 +131,6 @@
 		}
 	}
 
-	/*
-	// removes a symbol and destroys
-	void TableOfSymbols::removeSymbol (string name, int symbolScopeID){
-
-	}
-    */
 
 	// opens a new  inner blokc scope with the variables from the father scope.
 	void TableOfSymbols::startNewScope()
@@ -160,3 +154,98 @@
 	    }
 		this->currentTableScopeID++;
 	}
+
+
+
+
+
+	//added for supporting structs:
+
+	string TableOfSymbols::getTypeName(string name) const throw(string){
+
+		map<string,stack<symbol>>::const_iterator it = this->scopeMap.find(name);
+		if(it == this->scopeMap.end())
+			throw name;
+			//throw " symbol " + name + " does not exist";
+		return it->second.top().typeName;
+
+	}
+
+
+	int TableOfSymbols::getINTStartAddr(string name) const throw(string){
+
+		map<string,stack<symbol>>::const_iterator it = this->scopeMap.find(name);
+		if(it == this->scopeMap.end())
+			throw name;
+			//throw " symbol " + name + " does not exist";
+		return it->second.top().m_INTstartAddr;
+
+	}
+
+	int TableOfSymbols::getREALStartAddr(string name) const throw(string){
+
+			map<string,stack<symbol>>::const_iterator it = this->scopeMap.find(name);
+			if(it == this->scopeMap.end())
+				throw name;
+				//throw " symbol " + name + " does not exist";
+			return it->second.top().m_REALstartAddr;
+
+		}
+
+
+
+
+	void TableOfSymbols::addSymbolStruct(string name, t_type symType,int INTaddress, int REALadress) throw(string)
+	{
+
+		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		// new symbol, not previously declared
+		if( it == this->scopeMap.end() ) {
+			symbol sym;
+			sym.scopeID = this->currentTableScopeID;
+			sym.type = symType;
+		    sym.m_INTstartAddr = INTaddress;
+		    sym.m_REALstartAddr = REALadress;
+		    this->scopeMap[name].push(sym);
+
+		    //debug
+		    //map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		    //cout << "added symbol: " << '\n';
+		    //it->second.top().print();
+
+		    // where here so there was a symbol called name in the past
+		}else if (it->second.empty()){
+			//our internal error
+			cerr << "error: symbol named " + name + "was popped from its stack" << endl; //TODO : replace cerr with agreed exceptions handling
+            throw name;
+			// Table scope closing error: symbol named   name has scope less than current this symbol should have been deleted earlier
+		}else if (it->second.top().scopeID < this->currentTableScopeID){
+		    cerr << "error: symbol named " + name + " has scope less than current when addSymbol tried to add another symbol" <<endl;
+		    throw name;
+
+		    // error: user tried to declare the same symbol twice
+		}else if (it->second.top().scopeID == this->currentTableScopeID){
+			cerr << "semantic scope error: symbol named " + name + " user tried to declare the same symbol twice in the same scope";
+			throw name;
+
+			// this symbol has been declared in a bigger scope before, masking
+		}else{ // prev.scopeID > this->currentTableScopeID
+			symbol sym;
+			sym.scopeID = this->currentTableScopeID;
+			sym.type = symType;
+		    sym.m_INTstartAddr = INTaddress;
+		    sym.m_REALstartAddr = REALadress;
+			it->second.push(sym);
+
+		    //debug
+		    //		    map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
+		   // 		    cout << "added symbol: " << '\n';
+		    //		    it->second.top().print();
+		}
+	}
+
+
+
+
+
+

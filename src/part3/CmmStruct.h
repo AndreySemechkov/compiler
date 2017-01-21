@@ -11,6 +11,7 @@
 #include "definitions.h"
 //#include "tableOfStructs.h"
 #include <string>
+#include <map>
 
 //class TableOfStructs;
 class CmmStruct;
@@ -48,7 +49,6 @@ struct CmmStructField {
 	//else, this pointer should be set to nullptr.
 	CmmStruct * structDescriptor;
 
-
 	//returns true if the field is a struct
 	bool isStruct();
 	int getNumFields();
@@ -57,7 +57,17 @@ struct CmmStructField {
 
 	int getNumRealFields();
 
+	int INToffsetInsideStruct;
+	int REALoffsetInsideStruct;
+
+
 };
+
+//
+//  assignStructs - function for assignment between structs
+//
+void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right);
+
 
 //
 // Class CmmStruct - describes CmmStructs
@@ -66,6 +76,9 @@ class CmmStruct {
 
 	string m_name; //name of the struct
 	map<string, CmmStructField> m_fields; // map of struct's fields
+	list<CmmStructField> m_fields_list; // list of struct's fields.
+	//note: we hold both a map and a list: map for easier search,
+	//and a list for easier offset calculation.
 
 public:
 	CmmStruct();
@@ -85,9 +98,14 @@ public:
 	int getNumIntFields();
 	int getNumRealFields();
 
+	//assigment between structs
 
-
+	friend void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right );
 
 };
+
+
+
+
 
 #endif /* CMMSTRUCT_H_ */

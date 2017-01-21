@@ -1,4 +1,4 @@
-% {
+%{
 	/* Project part 3 - Bison file */
 
 	/**********************************************************************************
@@ -18,9 +18,13 @@
 	/**********************************************************************************
 	 *                                   Function Declarations
 	 ***********************************************************************************/
-	extern int yylex();
-	extern char* yytext;
-	extern int yylineno;
+	extern "C" {
+		 int yylex();
+		 char* yytext;
+		 int yylineno;
+		 void yyerror(const char* msg);
+
+	}
 	void yyerror(const char* msg);
 	%}
 
@@ -94,13 +98,41 @@ PROGRAM: TDEFS FDEFS MAIN_FUNCTION
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        TDEFS (struct declarations)
  ***********************************************************************************/
 
 TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 {
+	
+	//the first struct will be parsed first
+	
+	//check that declarlist is OK. (no double declerations,etc)
+	CmmStruct myStruct;
+	for (auto& it : $4.dclNodes){
+		
+		try{
+			myStruct.addField(it.second);
+		}catch(string err){
+			cerr << "Semantic error: " << err;
+			cerr << " in line number " << it.first << endl;
+			exit(EXIT_SEMANTIC_FAILURE);
+		}
+		
+	}
+	
+	//verify that struct name is unique
+	if(structsTable.find($6.value) != structsTable.end()){
+		cerr << "Semantic error: " << "multiple definitions of struct name " + $6.value ;
+		cerr << " in line number " << it.first << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+	//now, do the job!
+	myStruct.name = $6.value;
+	structsTable.insert(std::make_pair($6.value, myStruct));
+	
 }
-| /*epsilon*/
+| /*epsilon*/{}
 ;
 
 /**********************************************************************************
@@ -155,13 +187,15 @@ BLK: DECLARATIONS '{' LIST '}' {
 
 	//we reached the end the scope, update symbolTable
 	symbolTable.endScope();
+	mem.endBLK();
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        DECLARATIONS
  ***********************************************************************************/
 
 DECLARATIONS: TK_var DECLARLIST {
+	mem.startBLK();
 	symbolTable.startNewScope();
 
 	//for every symbol, calc its addr = lastUsedAddr,
@@ -171,32 +205,58 @@ DECLARATIONS: TK_var DECLARLIST {
 	for(auto& it : $2.dclNodes) {
 
 		//calculate address:
-		int myAdder;
-
+				
 		//simple types first:
 
-		if(! it.isStruct()) {
+		if(! it.second.isStruct()) {
 			//if type = real
 			//if type = int
-			myAdder=mem.getMem(it.type);
-		}
+			int myAdder=mem.getMem(it.second.type);
+			
+			//now, add to table:
+			try {
+				symbolTable.addSymbol(it.second.name , it.second.type , myAdder);
+			} catch(string e) {
+				cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
+				cerr << " in line number " << it.first << endl;
+				exit(EXIT_SEMANTIC_FAILURE);
+			}
+			
+			
+		}else{
 
-		//if type = struct...
-		//TODO:
+			//if type = struct...
+			//TODO:
+			
+			//stage1: lookup in structsTable, and check if it exists
+			
+			std::map<std::string,CmmStruct>::iterator structITR = structsTable.find(it.second.name);
+			//if it does not exists: semantic error
+			if(structITR== structsTable.end()){
+				cerr << "Semantic error: '" << it.second.name << "' does not name a type";
+				cerr << " in line number " << it.first << endl;
+				exit(EXIT_SEMANTIC_FAILURE);
+				
+			}
+			//stage2: get addr from memHandler
+			//getBulkMemory for it!
+			int myINTAddr = mem.getBulkMem(INT,it.second.getNumIntFields());
+			int myREALAddr = mem.getBulkMem(REAL,it.second.getNumRealFields());
+			
+			//stage3: try to add to table
+			try {
 
-		//now, add to table:
-		try {
-			symbolTable.addSymbol(it.name , it.type , myAdder);
-		} catch(string e) {
-			cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
-			cerr << " in line number " << to_string(yylineno) << endl;
-			exit(EXIT_SEMANTIC_FAILURE);
+			symbolTable.addSymbolStruct(it.second.name , it.second.type, myINTAddr, myREALAddr );
+			} catch(string e) {
+				cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
+				cerr << " in line number " << it.first << endl;
+				exit(EXIT_SEMANTIC_FAILURE);
+			}
 		}
 
 	}
 
 	//try to add all the parsed symbols to the main symbol table.
-
 	//catch anything : semnatic error.
 
 }
@@ -205,7 +265,7 @@ DECLARATIONS: TK_var DECLARLIST {
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        DECLARLIST //fixme
  ***********************************************************************************/
 
 DECLARLIST: DECLARLIST DCL ';' {
@@ -214,23 +274,22 @@ DECLARLIST: DECLARLIST DCL ';' {
 	//split it into serveral nodes
 
 	//splice all the lists to DECLARLIST list:
-	$1.dclNodes.splice($1.end(), $2.dclNodes );
-	$$.dclNodes.splice($$.end(), $1.dclNodes );
+	$1.dclNodes.splice($1.dclNodes.end(), $2.dclNodes );
+	$$.dclNodes.splice($$.dclNodes.end(), $1.dclNodes );
 
 }
 
 | DCL ';' {
 //first declaration.
 	//splice the DCL list into DECLARLIST list
-	$$.dclNodes.splice($$.end(), $1.dclNodes );
+	$$.dclNodes.splice($$.dclNodes.end(), $1.dclNodes );
 
 	//if it its more then one declaration, 
 	//split it into serveral nodes
-
 }
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        DCL //fixme
  ***********************************************************************************/
 
 DCL: TK_id ':' TYPE {
@@ -241,7 +300,7 @@ DCL: TK_id ':' TYPE {
 	dcl.type = $3.type;
 	dcl.structDescriptor = NULL;
 	//stage2: push to list
-	$$.dclNodes.push_back(dcl);
+	$$.dclNodes.push_back(std::make_pair(to_string(yylineo),dcl));
 }
 | TK_id ':' TK_id {
 //decleration of struct
@@ -253,12 +312,12 @@ DCL: TK_id ':' TYPE {
 	//create a node for the new Id (left)
 	DCLnode dcl;
 	dcl.name = $1.value;
-	dcl.type = $3.dclNodes.begin()->type;
-	dcl.structDescriptor = $3.dclNodes.begin()->structDescriptor;
+	dcl.type = $3.dclNodes.begin()->second.type;
+	dcl.structDescriptor = $3.dclNodes.begin()->second.structDescriptor;
 
 	//now, splice all the lists (new node + previeous nodes) to $$ list.
-	$$.dclNodes.push_back(dcl);
-	$$.dclNodes.splice($$.end(), $3.dclNodes)
+	$$.dclNodes.push_back(std::make_pair(to_string(yylineo),dcl));
+	$$.dclNodes.splice($$.dclNodes.end(), $3.dclNodes)
 		
 }
 ;
@@ -285,13 +344,13 @@ LIST: LIST M STMT {
 	$3.nextList.clear(); //will be taken care by backpatching the LIST in the next derevation
 	buffer.backpatch($1.nextList, $2.quad);
 }
-| /*epsilon*/
+| /*epsilon*/ {}
 ;
 /**********************************************************************************
  *                        STMT
  ***********************************************************************************/
 
-STMT: ASSN
+STMT: ASSN {}
 | CNTRL {
 	$$.nextList = $1.nextList; //in order to backpatch
 }
@@ -301,7 +360,7 @@ STMT: ASSN
 | BLK {}
 ;
 /**********************************************************************************
- *                        PROGRAM
+ *                        STMT_RETURN //TODO
  ***********************************************************************************/
 
 STMT_RETURN: TK_return '(' EXP ')' ';' {
@@ -398,10 +457,46 @@ ASSN: LVAL TK_assign EXP ';' {
 
 		string toEmitStore = ($$.type == INT ) ? "STORI I" : "STORR R";
 		buffer.emit(toEmitStore + to_string($3.registerNum) + " " + to_string($1.addr) + " 0");
-	}
+	}else{	//TODO:
+
 
 	//case 2: assignment between structs 
-
+		
+		//2.1 : verify that they are struct from the same type:
+		sdLeft = $1.oldFieldD->structDescriptor;
+		sdRight = $3.oldFieldD->structDescriptor;
+		
+		//TODO: maybe assert they are not NULL? although this should not happen.
+		
+		if(sdLeft->name != sdRight->name){			
+			cerr << "Semantic error:"
+			<< " ASSN expecting same types "
+			<< " in line number " << to_string(yylineno) << endl;
+		}
+		
+		//now, do the job
+		
+		//ALG : structs assinment
+		//input : 2 lists - structs fields lists.
+		
+		//go over both structs fields list:
+			//for every feild:
+				//if its a simple type - transfer 
+				//if its a struct type, call the algorighm recusivly with the lists.
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	
+	}
 	//TODO:
 
 }
@@ -411,7 +506,7 @@ ASSN: LVAL TK_assign EXP ';' {
  ***********************************************************************************/
 
 LVAL: TK_id {
-	//(if type is INT or REAL, then READ will work)
+	//(if type is INT or REAL, then READ will work) else, its a struct..
 	//SEMANTIC CHECKS:
 	//is id in the sybol table?
 	string name = $1.value;
@@ -433,10 +528,11 @@ LVAL: TK_id {
 		if($$.type != REAL && $$.type != INT) {
 			//todo:
 			//means it is a struct, do we have to do something special?
+			//no! it fine we already did a lookup, and we can do it again if needed..
+		}else{
+			//INT,REAL case
+			$$.addr = symbolTable.getAddr(name);
 		}
-
-		//both cases
-		$$.addr = symbolTable.getAddr(name);
 	} catch(string e)
 	{
 		cerr << "Semantic error: undeclared symbol '" << e << "' ";
@@ -447,6 +543,20 @@ LVAL: TK_id {
 	//anything else?	
 }
 | STREF {
+	//copy all
+	$$ = $1
+	
+	if($1.type == INT || $1.type == REAL){
+		//simple type, 
+		//so same as above, but with different addr calculation:
+		$$.addr = ($1.type == INT) ? $1.INTaddr : $1.REALaddr;		
+		
+	}else{
+		//struct!
+		//do we have all we need baby?
+		//FIXME:
+	}
+	
 	//todo: set type as something different from INT and REAL (for READ to work) ???
 }
 ;
@@ -468,7 +578,7 @@ CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
 	buffer.backpatch($2.trueList, $4.quad);
 	buffer.backpatch($2.falseList, $8.quad);
 	// merge all three to S list
-	std::set<int> tmp;
+	set<int> tmp;
 	MERGE(tmp, $5.nextList, $6.nextList);
 	MERGE($$.nextList, tmp, $9.nextList);
 }
@@ -492,7 +602,7 @@ CNTRL: TK_if BEXP TK_then M STMT N TK_else M STMT {
 	 */
 	buffer.backpatch($6.nextList , $2.quad);
 	buffer.backpatch($3.trueList , $5.quad);
-	$$.nestList = $3.falseList;
+	$$.nextList = $3.falseList;
 	buffer.emit("UJUMP " + to_string($2.quad));
 }
 ;
@@ -747,9 +857,10 @@ EXP: EXP TK_addop EXP {
 
 	// check if id is declared in the current scope:
 	string name = $1.value;
+	$$.value = $1.value;
 
 	//semantics checks:
-	bool exists = symbolTable.find(tmp);
+	bool exists = symbolTable.find(name);
 	if (!exists) {
 		cerr << "Semantic error: undeclared symbol '" << name << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
@@ -757,35 +868,73 @@ EXP: EXP TK_addop EXP {
 	}
 
 	// check if id is int or real:
-	type_t myType = symbolTable.getType(name);
-	if ( myType != INT && myType!= REAL) {
-		cerr << "Semantic error: invalid use of symbol '" << name << "'";
-		cerr << "in line number " << to_string(yylineno) << endl;
-		exit(EXIT_SEMANTIC_FAILURE);
-	}
-
-	//init EXP:
-
+	t_type myType = symbolTable.getType(name);
+	
 	// set type of EXP :
 	$$.type = myType;
-	string toEmitLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
 
-	// allocate a register for EXP :
-	$$.registerNum = bank.getRegister($$.type);
-	toEmitLoad+= to_string($$.registerNum);
-
-	//get adder, in order to load
-	int addr = symbolTable.getAddr(name);
-	//TODO: should save the addr for EXP ? (I think we should not, so I avoid saving it to avoid errors).
-
-	//load to register
-	buffer.emit(toEmitLoad + " 0 " + to_string(addr));//FIXME: check if the address is right
-
+	
+	if ( myType != INT && myType!= REAL) {
+//		cerr << "Semantic error: invalid use of symbol '" << name << "'";
+//		cerr << "in line number " << to_string(yylineno) << endl;
+//		exit(EXIT_SEMANTIC_FAILURE);
+		
+		//then it is a struct!
+		//TODO
+		//will be used only in assignment.
+		//in assignment - we do:
+		//looup name=$$.value in symbol table. 
+		//calculate offset how many fields of each type we have
+		//calculate start offsets for each.
+		//copy mem! (load to reg, store from reg to mem...)
+		
+		
+		//(we will use the $$.value in order to lookop it in the structs table)
+		
+		
+	}else{ //INT or REAL
+	//FIXME:
+		
+		//init EXP:	
+		string toEmitLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
+	
+		// allocate a register for EXP :
+		$$.registerNum = bank.getRegister($$.type);
+		toEmitLoad+= to_string($$.registerNum);
+	
+		//get adder, in order to load
+		int addr = symbolTable.getAddr(name);
+		//TODO: should save the addr for EXP ? (I think we should not, so I avoid saving it to avoid errors).
+	
+		//load to register
+		buffer.emit(toEmitLoad + " 0 " + to_string(addr));//FIXME: check if the address is right
+	}
 }
 | STREF {
-
+	
+	//internal struct field.
 	//TODO:
+	$$.type = $1.type;
 
+	//case 1: int or real - load to reg
+	if($1.type == INT || $1.type == REAL){
+		
+		if($1.type == INT){
+			$$.addr =  $1.INTaddr;
+		}else if($1.type == REAL){
+			$$.addr =  $1.REALaddr;
+		}
+		
+		$$.registerNum = bank.getRegister($$.type);
+		string toEmitLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
+		toEmitLoad+= to_string($$.registerNum);
+
+		buffer.emit(toEmitLoad + " 0 " + to_string($$.addr));//FIXME: check if the address is right
+	}else{
+		//struct!
+		//take care only in assinment, keep all data (just in case..)
+		$$ = $1
+	}	
 }
 | TK_num {
 	//deterine value
@@ -815,10 +964,110 @@ EXP: EXP TK_addop EXP {
  ***********************************************************************************/
 
 STREF: TK_id '[' TK_id ']' {
+	
+	//lookup id in symbol table	//id is the "father"
+	//verify it exists
+	if(! symbolTable.find($1.value)){
+		cerr << "Semantic error: undeclared symbol '" << $1.value << "' ";
+		cerr << "in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+		
+	}
+	//verify its a struct (and not just an INT or REAL)
+	if(! symbolTable.isStruct($1.value)){
+		cerr << "Semantic error: can't STREF. symbol '" << $1.value << "' is not a struct!";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	//get its typename, 
+	string typeName = symbolTable.getTypeName($1.value);
+	//verify it is a declared struct! 
+	//lookup in structs table
+	std::map<std::string,CmmStruct>::iterator father = structsTable.find(typeName);
+	
+	//if it does not exists- semantic error!
+	if(father==father.end()){
+		cerr << "Semantic error: can't STREF. symbol '" << $1.value << "' is not a decleraed struct!";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+		
+	}
+	
+	//get fathers start adress, and denote it as MS (my start address)
+	 
+	int startAddr_INT = symbolTable.getINTStartAddr($1.value);
+	int startAddr_REAL = symbolTable.getREALStartAddr($1.value);
+
+		
+	//see if it has a field named id
+	//if not, semantic error
+	
+	CmmStructField * fieldD;
+	
+	try{
+		fieldD = father->second.getFieldByName($1.value);
+	}catch(string err){
+		cerr << "Semantic error: " << err;
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+
+	//TODO:
+	
+	//get init offset inside struct 
+	$$.INToffsetInsideStruct = fieldD->INToffsetInsideStruct;
+	$$.REALoffsetInsideStruct = fieldD->REALoffsetInsideStruct;
+
+	
+	//addr = MO+MS
+	
+	$$.INTaddr   =  $$.INToffsetInsideStruct + startAddr_INT ;
+	$$.REALaddr  =  $$.REALoffsetInsideStruct + startAddr_REAL ;
+
+	$$.type = fieldD->type;
+	$$.oldFieldD = fieldD;
 
 }
 | STREF '[' TK_id ']' {
-	//must be in tor real
+	
+	//semantic checks
+	
+	//if it is a simple type: semantic error
+	if($1.type == INT || $1.type == REAL ){ 
+		
+		string t = ($1.type == INT) ? "INT" : "REAL" ;
+		
+		cerr << "Semantic error: can't STREF. type '" << t << "'. it is not a struct!";
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+		
+	}
+	
+	//check wheter STREF has a field name id
+	//if true, get it
+	CmmStructField * fieldD;
+	try{
+		fieldD = $$.oldFieldD->structDescriptor->getFieldByName($3.value);
+	}catch(string err){ //else, semantic error
+		cerr << "Semantic error: STREF " << err;
+		cerr << " in line number " << to_string(yylineno) << endl;
+		exit(EXIT_SEMANTIC_FAILURE);
+	}
+	
+		
+		//compute total offset inside struct 
+		$$.INToffsetInsideStruct += fieldD->INToffsetInsideStruct;
+		$$.REALoffsetInsideStruct += fieldD->REALoffsetInsideStruct;
+
+		
+		//addr = MO+MS
+		
+		$$.INTaddr   += fieldD->INToffsetInsideStruct;
+		$$.REALaddr  += fieldD->REALoffsetInsideStruct ;
+
+		$$.type = fieldD->type;
+		$$.oldFieldD = fieldD;
 
 }
 ;

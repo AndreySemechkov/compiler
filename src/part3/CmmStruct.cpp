@@ -10,37 +10,43 @@
 //
 //Class CMM struct field
 
-
-	bool CmmStructField::isStruct() {
-		return (type != INT && type != REAL);
+bool CmmStructField::isStruct() {
+	return (type != INT && type != REAL);
+}
+int CmmStructField::getNumFields() {
+	if (!isStruct())
+		return 1;
+	return structDescriptor->getNumFields();
+}
+int CmmStructField::getNumIntFields() {
+	if (!isStruct()) {
+		if (type == INT)
+			return 1;
+		if (type == REAL)
+			return 0;
 	}
-	int CmmStructField::getNumFields(){
-		if (!isStruct()) return 1;
-		return structDescriptor->getNumFields();
-	}
-	int CmmStructField::getNumIntFields(){
-		if (!isStruct()){
-			if (type == INT) return 1;
-			if (type == REAL) return 0;
-		}
-		return structDescriptor->getNumIntFields();
+	return structDescriptor->getNumIntFields();
 
-	}
+}
 
-	int CmmStructField::getNumRealFields(){
+int CmmStructField::getNumRealFields() {
 
-		if (!isStruct()){
-			if (type == REAL) return 1;
-			if (type == INT) return 0;
-		}
-		return structDescriptor->getNumRealFields();
+	if (!isStruct()) {
+		if (type == REAL)
+			return 1;
+		if (type == INT)
+			return 0;
 	}
+	return structDescriptor->getNumRealFields();
+}
 
 //
 
+void assignStructs(list<CmmStructField>& left, list<CmmStructField>& right){
 
+	//TODO:
 
-
+}
 
 //
 //Class CMM struct
@@ -54,14 +60,21 @@ CmmStruct::~CmmStruct() {
 	// TODO Auto-generated destructor stub
 }
 
-void CmmStruct::addField(CmmStructField field){
-	try{
-		m_fields.insert(std::pair<string,CmmStructField>(field.name, field));
-	}catch(...){
-		throw(" struct " + m_name + ": field " + field.name + " defined more then once.");
+void CmmStruct::addField(CmmStructField field) {
+	if (m_fields.find(field.name) != m_fields.end()) {
+		throw(" struct " + m_name + ": field " + field.name
+				+ " defined more then once.");
 	}
-}
 
+	//calc offset inside struct
+	field.INToffsetInsideStruct = this->getNumIntFields();
+	field.REALoffsetInsideStruct = this->getNumRealFields();
+
+	//
+	m_fields.insert(std::pair<string, CmmStructField>(field.name, field));
+	m_fields_list.push_back(field);
+
+}
 
 int CmmStruct::getNumFields() {
 	int sum = 0;
@@ -79,7 +92,6 @@ int CmmStruct::getNumIntFields() {
 	return sum;
 }
 
-
 int CmmStruct::getNumRealFields() {
 	int sum = 0;
 	for (auto& it : m_fields) {
@@ -88,13 +100,11 @@ int CmmStruct::getNumRealFields() {
 	return sum;
 }
 
-
-
-CmmStructField * CmmStruct::getFieldByName(string name){
+CmmStructField * CmmStruct::getFieldByName(string name) {
 	CmmStructField* f = NULL;
-	try{
+	try {
 		f = &(m_fields.at(name));
-	}catch(...){
+	} catch (...) {
 		throw("struct " + m_name + ": field " + name + " does not exist.");
 	}
 	return f;

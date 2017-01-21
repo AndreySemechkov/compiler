@@ -30,3 +30,45 @@ if(bank[type] == 999 ){
 
 return bank[type]++;
 }
+
+
+
+int MemHandler::getBulkMem(t_type type, int numFieldsOfType){
+
+
+	if(type != REAL && type != INT){
+		// our error!
+	}
+	if(numFieldsOfType <= 0){
+		//our error!
+
+	}
+
+	if(bank[type] +  numFieldsOfType > 999 ){
+		//operational error, but they say we can assume it will not happen
+	}
+
+	int tmp = bank[type];
+
+
+	bank[type] = bank[type] + numFieldsOfType;
+
+	return tmp;
+
+}
+
+
+void MemHandler::startBLK(){
+
+	//remember the memroy places we used
+	for(int i =0 ; i< 2 ; i++){
+		scopeMem[i] = bank[i];
+	}
+}
+
+void MemHandler::endBLK(){
+	//resotre the memory places
+	for(int i =0 ; i< 2 ; i++){
+		bank[i] = scopeMem[i];
+	}
+}

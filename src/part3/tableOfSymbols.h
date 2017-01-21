@@ -42,6 +42,12 @@ typedef struct symbol_{
      * */
 	int scopeID;
     int address;
+
+    //for supporting structs:
+    string typeName;
+    int m_INTstartAddr; //for 2 types: int and real
+    int m_REALstartAddr; //for 2 types: int and real
+
     //&vector<t_type>;
 
     void print(){
@@ -116,6 +122,16 @@ public:
 	void setParsingDeclerations(bool val){
 		this->parsingDeclerations = val;
 	}
+
+
+	//for supporting structs:
+	string getTypeName(string name) const throw(string);
+	int getINTStartAddr(string name) const throw(string);
+	int getREALStartAddr(string name) const throw(string);
+
+	//add symbol, struct version
+	void addSymbolStruct(string name, t_type symType,int INTaddress, int REALadress) throw(string);
+
 };
 
 

@@ -12,10 +12,36 @@
 
 class MemHandler {
 	int bank[2];
+
+	int scopeMem[2]; //in order to forget all the temporary memory allocated in a block
 public:
 	MemHandler();
 	virtual ~MemHandler();
-	int getMem(t_type type); //get next available mem of requested type
+	int getMem(t_type type); //get next available mem of requested simple type
+
+
+	//a function to be called when inserting structs to the symbol table.
+	/*
+	 * parmeters are
+	 * @type - type of memory we want to allocate (int or real)
+	 * @numFieldsOfType - total number of fields of the requested type ,
+	 * 		(which caller struct contains)
+	 *
+	 * behavior:
+	 * the function adds numFieldsOfType to bank[type],
+	 * and returns the adress before change
+	 * */
+	int getBulkMem(t_type type, int numFieldsOfType);
+
+
+	//remember the memroy places we used
+	void startBLK();
+
+	//resotre the memory places
+	void endBLK();
+
+
+
 };
 
 #endif /* MEMHANDLER_H_ */
