@@ -37,6 +37,8 @@ public:
 	void printRiski(string filename);
 	// return the line number of the next quad;
 	int nextQuad();
+
+	void insertHeader(string line);
 };
 
 

@@ -91,7 +91,56 @@ void yyerror(const char* msg);
  ***********************************************************************************/
 PROGRAM: TDEFS FDEFS MAIN_FUNCTION
 {
-
+    //making the halt line and adding the header to the buffer 
+	vector<string> implementedLine;
+	vector<string> unimplementedLine;
+	vecotr<string> headerLines;
+	
+	
+	
+	if(isMain){
+		//the current file that is parsed has the main
+		headerLines.push_back("<main>");
+		buffer.backpatch($1.nextList,$4.quad);//TODO check the backpatch
+		buffer.emit("HALT");
+	}
+	else{
+		// empty
+		headerLines.push_back("<empty>");
+		buffer.backpatch($1.nextList,0);//TODO check the backpatch
+	}
+	//add the <header> as the last line
+	headerLines.push_back("<header>");
+	
+	unimplementedLine.push_back("<unimplemented>");
+	implementedLine.push_back("<implemented>");
+	for(map<string,Function>::iterator it = functionsTable.begin(); it != functionsTable.end(); ++it){
+		
+		if(it->implemented){
+			//<implemented> foo,1,2,23, goo,2,23,44, doo
+					implementedLine.push_back(" ");
+					implementedLine.push_back(it->first);
+					implementedLine.push_back(",");
+					for(vector<int>iterator itVec = it->calledFromLines.begin(); itVec != it->calledFromLines.end(); ++itVec){
+					    implementedLine.push_back(to_string(*itVec));
+						implementedLine.push_back(",");
+					}
+		}
+		else{
+			//<unimplemented> foo,1,2,23, goo,2,23,44, doo
+					unimplementedLine.push_back(" ");
+					unimplementedLine.push_back(it->first);
+					unimplementedLine.push_back(",");
+					for(vector<int>iterator itVec = it->calledFromLines.begin(); itVec != it->calledFromLines.end(); ++itVec){
+						unimplementedLine.push_back(to_string(*itVec));
+						unimplementedLine.push_back(",");
+					}
+		}
+		
+	}
+	
+	its = headerLines.begin();
+	headerLines.insert(its,"</header>");
 }
 ;
 /**********************************************************************************

@@ -50,6 +50,10 @@ void Buffer::print(){
       myfile.close();
 	}
 
+	void Buffer::insertHeader(string line){
+        vector<string>::iterator it = this->bufferLines.begin();
+		this->bufferLines.insert(it,line);
+	}
 
 
 

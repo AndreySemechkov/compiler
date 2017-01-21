@@ -32,12 +32,6 @@ extern std::stack<t_type> currentFunctionReturnType;
 extern bool isMain;
 
 
-//extern "C" {
-	// int yylex();
-	// char* yytext;
-	// int yylineno;
-//}
-
 //no adress
 #define NO_ADDR -1
 
