@@ -41,12 +41,12 @@ int CmmStructField::getNumRealFields() {
 }
 
 //
-
+/*
 void assignStructs(list<CmmStructField>& left, list<CmmStructField>& right){
 
 	//TODO:
-
-}
+*/
+//}
 
 //
 //Class CMM struct

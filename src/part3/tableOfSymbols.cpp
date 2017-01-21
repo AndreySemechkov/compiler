@@ -86,7 +86,7 @@
 	// adds a new symbol name name to the current scope
 	void TableOfSymbols::addSymbol(string name, t_type symType,int address) throw(string)
 	{
-
+                 printf("called with : %s %d \n",name.c_str(),symType);
 		map<string,stack<symbol>>::iterator it = this->scopeMap.find(name);
 		// new symbol, not previously declared
 		if( it == this->scopeMap.end() ) {

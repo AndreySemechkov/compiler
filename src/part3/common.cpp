@@ -14,11 +14,11 @@ MemHandler mem;
 std::map<std::string,CmmStruct> structsTable;
 
 
-extern "C" int yyparse (void);
-extern "C" void yylex_destroy();
-extern "C"	FILE *yyin;
-extern "C"	int yylex();
-
+extern int yyparse ();
+extern void yylex_destroy();
+extern	FILE *yyin;
+extern 	int yylex();
+extern int yydebug;
 /**************************************************************************/
 /*                           Main of parser                               */
 /**************************************************************************/
@@ -40,9 +40,9 @@ int main(int argc, char* argv[])
     	  exit(EXIT_OPERATIONAL_FAILURE);
     }
 
-#if YYDEBUG
+//#if YYDEBUG
     yydebug=1;
-#endif
+//#endif
     yyin = fopen(argv[1],"r");
     int rs;
     rs = yyparse();

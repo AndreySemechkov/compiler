@@ -27,6 +27,12 @@ extern MemHandler mem;
 extern TableOfSymbols symbolTable;
 extern std::map<std::string,CmmStruct> structsTable ;
 
+//extern "C" {
+	// int yylex();
+	// char* yytext;
+	// int yylineno;
+//}
+
 //no adress
 #define NO_ADDR -1
 
@@ -35,17 +41,6 @@ extern std::map<std::string,CmmStruct> structsTable ;
 dest.insert(v1.begin(),v1.end()); \
 dest.insert(v2.begin(),v2.end()); \
 }	while(0)
-
-
-/*
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-*/
 
 
 typedef CmmStructField DCLnode;

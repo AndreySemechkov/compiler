@@ -12,7 +12,7 @@
 //#include "tableOfStructs.h"
 #include <string>
 #include <map>
-
+#include <list>
 //class TableOfStructs;
 class CmmStruct;
 
@@ -66,7 +66,7 @@ struct CmmStructField {
 //
 //  assignStructs - function for assignment between structs
 //
-void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right);
+//void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right);
 
 
 //
