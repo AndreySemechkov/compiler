@@ -14,6 +14,7 @@ MemHandler mem;
 std::map<std::string,CmmStruct> structsTable;
 
 
+
 extern int yyparse ();
 extern void yylex_destroy();
 extern	FILE *yyin;
