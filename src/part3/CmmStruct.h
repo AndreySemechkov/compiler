@@ -73,14 +73,13 @@ void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right);
 // Class CmmStruct - describes CmmStructs
 //
 class CmmStruct {
-
+public:
 	string m_name; //name of the struct
 	map<string, CmmStructField> m_fields; // map of struct's fields
 	list<CmmStructField> m_fields_list; // list of struct's fields.
 	//note: we hold both a map and a list: map for easier search,
 	//and a list for easier offset calculation.
 
-public:
 	CmmStruct();
 	virtual ~CmmStruct();
 
@@ -101,6 +100,7 @@ public:
 	//assigment between structs
 
 	friend void assignStructs(list<CmmStructField>& left , list<CmmStructField>& right );
+
 
 };
 
