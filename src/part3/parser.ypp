@@ -18,12 +18,11 @@ using namespace std;
 	/**********************************************************************************
 	 *                                   Function Declarations
 	 ***********************************************************************************/
-	extern "C" {
-		 int yylex();
-		 char* yytext;
-		 int yylineno;
-	}
-	void yyerror(const char* msg);
+extern int yylex();
+extern char* yytext;
+extern int yylineno;
+	
+void yyerror(const char* msg);
 	%}
 
 /**********************************************************************************
@@ -298,7 +297,7 @@ DCL: TK_id ':' TYPE {
 	dcl.type = $3.type;
 	dcl.structDescriptor = NULL;
 	//stage2: push to list
-	$$.dclNodes.push_back(std::make_pair(to_string(yylineo),dcl));
+	$$.dclNodes.push_back(std::make_pair(to_string(yylineno),dcl));
 }
 | TK_id ':' TK_id {
 //decleration of struct
@@ -314,8 +313,8 @@ DCL: TK_id ':' TYPE {
 	dcl.structDescriptor = $3.dclNodes.begin()->second.structDescriptor;
 
 	//now, splice all the lists (new node + previeous nodes) to $$ list.
-	$$.dclNodes.push_back(std::make_pair(to_string(yylineo),dcl));
-	$$.dclNodes.splice($$.dclNodes.end(), $3.dclNodes)
+	$$.dclNodes.push_back(std::make_pair(to_string(yylineno),dcl));
+	$$.dclNodes.splice($$.dclNodes.end(), $3.dclNodes);
 		
 }
 ;
@@ -542,7 +541,7 @@ LVAL: TK_id {
 }
 | STREF {
 	//copy all
-	$$ = $1
+	$$ = $1;
 	
 	if($1.type == INT || $1.type == REAL){
 		//simple type, 
@@ -931,7 +930,7 @@ EXP: EXP TK_addop EXP {
 	}else{
 		//struct!
 		//take care only in assinment, keep all data (just in case..)
-		$$ = $1
+		$$ = $1;
 	}	
 }
 | TK_num {
@@ -984,7 +983,7 @@ STREF: TK_id '[' TK_id ']' {
 	std::map<std::string,CmmStruct>::iterator father = structsTable.find(typeName);
 	
 	//if it does not exists- semantic error!
-	if(father==father.end()){
+	if(father==structsTable.end()){
 		cerr << "Semantic error: can't STREF. symbol '" << $1.value << "' is not a decleraed struct!";
 		cerr << " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
