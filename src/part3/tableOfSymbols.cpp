@@ -149,7 +149,7 @@
 
                 it->second.pop();
             	if(it->second.empty())
-                    this->scopeMap.erase(it);
+                    this->scopeMap.erase(it++);
             }
 	    }
 		this->currentTableScopeID++;
