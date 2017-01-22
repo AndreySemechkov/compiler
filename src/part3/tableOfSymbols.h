@@ -28,6 +28,7 @@
 #include <memory>
 #include <stack>
 #include <vector>
+#include <list>
 
 #include "definitions.h"
 using namespace std;
@@ -80,7 +81,16 @@ private:
 
 	bool parsingDeclerations; // true if we are currently parsing a list of new declarations
 
+
+	std::list<int> BLKoffsets_INT;
+	std::list<int> BLKoffsets_REAL;
+
+
+
 public:
+
+	void tmpFunctionNewScopeStart(){currentTableScopeID--;}
+	void tmpFunctionNewScopeEnd(){currentTableScopeID++;}
 
     TableOfSymbols();
 
@@ -94,10 +104,11 @@ public:
 	void addSymbol(string name, t_type symType,int address) throw(string);
 
 	// opens a new scope with the variables from the father scope.
-	void startNewScope();
+	void startNewScope(int spAddReal, int spAddInt);
 
 	// deletes all local scope variables, ends the current scope and updates table.
-	void endScope();
+	//returns how much we need to dec from SP
+	void endScope(int *spAddReal, int *spAddInt);
 
 	// returns true if a symbol is a struct
 	bool isStruct(string name) const throw(string);
@@ -124,6 +135,7 @@ public:
 	}
 
 
+
 	//for supporting structs:
 	string getTypeName(string name) const throw(string);
 	int getINTStartAddr(string name) const throw(string);
@@ -131,6 +143,12 @@ public:
 
 	//add symbol, struct version
 	void addSymbolStruct(string name, t_type symType,int INTaddress, int REALadress) throw(string);
+
+
+
+
+	//for supporting BLKs - type must be INT or REAL
+	int getBLKoffset(t_type typet) const;
 
 };
 

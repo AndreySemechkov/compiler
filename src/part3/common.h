@@ -20,7 +20,7 @@
 #include <iterator>
 #include "CmmStruct.h"
 #include "Function.h"
-
+#include <cassert>
 
 extern Buffer buffer;
 extern RegistersBank bank;
@@ -74,7 +74,7 @@ typedef struct {
 
 	//for function calls
 
-	std::list<std::pair<t_type,int>> paramNodes;
+	std::list<std::pair<t_type,int>> paramNodes; //type, and registerNum
 
 
 } yystype_t;

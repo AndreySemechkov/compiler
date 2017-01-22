@@ -212,7 +212,7 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 ;
 
 /**********************************************************************************
- *                        PROGRAM
+ *                        FDEFS
  ***********************************************************************************/
 
 FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
@@ -246,9 +246,8 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 		FunctionSymbol sym;
 		sym.name = it.second.name;
 		sym.type = it.second.type;
-		sym.offset = i + INITIAL_OFFSET;
+		sym.offset = -i + INITIAL_OFFSET;
 		++i;
-		
 		try{
 			f.addSymbol(sym);
 		}catch(string err){
@@ -275,8 +274,29 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	
 	
 	//TODO:
-	
-	
+	//push a new symbol table to the sybol tables stack
+	//add all the function parmeters to the symbol table.
+	//get function symbol table
+		
+		TableOfSymbols functionSymbolTable;
+		functionSymbolTable.tmpFunctionNewScopeStart();
+		for (auto& symb : f.m_symbols_list){
+			
+			try{
+				
+				//addr = sp now,
+				functionSymbolTable.addSymbol(symb.name ,symb.type, symb.offset );
+						//then push it to mem.
+			
+			}catch(string s){
+				/// our internal errorr!!
+				assert(0);
+				
+			}
+			
+			
+		}
+		functionSymbolTable.tmpFunctionNewScopeEnd();
 	
 } BLK {
 	
@@ -396,12 +416,20 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
 MAIN_FUNCTION: TK_main {
 	
 	//mid rull atcion:
+	
+	//init SP and FP
+	//buffer.emit("COPYI I0 0");
+	buffer.emit("COPYI I1 0"); //INT FP
+	buffer.emit("COPYI I2 0"); //INT SP
+	buffer.emit("COPYI I3 0"); //REAL FP
+	buffer.emit("COPYI I4 0"); //REAL SP
+
 	currentFunctionReturnType.push(NONE);
 	symbolTable.push(TableOfSymbols());
 } BLK {
 	currentFunctionReturnType.pop();
 	symbolTable.pop();
-	isMain = true;
+	isMain = true; //THE FILES CONTAIOS MAIN FUNCTION!
 
 	// each function has its local scope with a clean table of its scope and its inner symbols.
 	//TableOfSymbols localTableOfSymbols;
@@ -417,7 +445,13 @@ BLK: DECLARATIONS '{' LIST '}' {
 	//TableOfSymbols localTableOfSymbols;
 
 	//we reached the end the scope, update symbolTable.top()
-	symbolTable.top().endScope();
+	int real_sum;
+	int int_sum;
+	symbolTable.top().endScope(&real_sum, &int_sum);
+	
+	buffer.emit("SUBTI I2 I2 " + to_string(int_sum));
+	buffer.emit("SUBTI I4 I4 " + to_string(real_sum));
+	
 	mem.endBLK();
 	
 	//reset register bank - (temporary registers)
@@ -430,7 +464,21 @@ BLK: DECLARATIONS '{' LIST '}' {
 
 DECLARATIONS: TK_var DECLARLIST {
 	mem.startBLK();
-	symbolTable.top().startNewScope();
+	
+	//get num int fields, get num real fields, + add to sp
+	
+	int real_sum =0 ;
+	int int_sum = 0;
+	for(auto& it : $$.dclNodes){
+		real_sum+= it.second.getNumRealFields();
+		int_sum+= it.second.getNumIntFields();
+	}
+	
+	//add to sp
+	buffer.emit("ADD2I I2 I2 " + to_string(int_sum));
+	buffer.emit("ADD2I I4 I4 " + to_string(real_sum));
+	
+	symbolTable.top().startNewScope(real_sum,int_sum);
 
 	//for every symbol, calc its addr = lastUsedAddr,
 	//update lastUsedAddr += symbol->NumFields
@@ -495,7 +543,7 @@ DECLARATIONS: TK_var DECLARLIST {
 
 }
 | /*epsilon*/{
-	symbolTable.top().startNewScope();  // only because we call end scope in BLK
+	symbolTable.top().startNewScope(0,0);  // only because we call end scope in BLK
 }
 ;
 /**********************************************************************************
@@ -631,7 +679,8 @@ STMT_RETURN: TK_return '(' EXP ')' ';' {
 	
 	string eStore = ($3.type == INT)? "STORI I" : "STORR R";
 	$$.registerNum = bank.getRegister($3.type);
-	buffer.emit(eStore + to_string($$.registerNum) + " I1 -1"); //I1 -- frame PTR
+	string fp = $3.type == INT ? "I1" : "I3"; 
+	buffer.emit(eStore + to_string($$.registerNum) + " " + fp + " -1"); //I1 -- fram PTR
 	buffer.emit("RETRN"); //goto IO
 	//clear tmp registers:
 	bank = RegistersBank();
@@ -699,7 +748,8 @@ READ: TK_read '(' LVAL ')' ';' {
 	//compute string to emit
 	string toEmitStore = ($3.type == INT) ? "STORI I" : "STORR R";
 	toEmitStore+= to_string(reg);
-	toEmitStore = toEmitStore + " " + to_string($3.addr) + " 0";//the LVAL is in memmorry, addr stores where //FIXME:
+	string fp = $3.type == INT ? "I1" : "I3"; 
+	toEmitStore = toEmitStore + " " + to_string($3.addr) + " "+fp;//the LVAL is in memmorry, addr stores where //FIXME:
 
 	//now, do the job
 	buffer.emit(toEmitStore);
@@ -727,7 +777,8 @@ ASSN: LVAL TK_assign EXP ';' {
 		// assign value to lval memory.
 
 		string toEmitStore = ($$.type == INT ) ? "STORI I" : "STORR R";
-		buffer.emit(toEmitStore + to_string($3.registerNum) + " " + to_string($1.addr) + " 0");
+		string fp = $$.type == INT ? "I1" : "I3"; 
+		buffer.emit(toEmitStore + to_string($3.registerNum) + " " + to_string($1.addr) + " "+fp); //offset+FP
 	}else{	//TODO:
 
 
@@ -1165,7 +1216,9 @@ EXP: EXP TK_addop EXP {
 		//TODO: should save the addr for EXP ? (I think we should not, so I avoid saving it to avoid errors).
 		//$$.addr = addr;
 		//load to register
-		buffer.emit(toEmitLoad + " 0 " + to_string(addr));//FIXME: check if the address is right
+		string fp = $$.type == INT ? "I1" : "I3"; 
+
+		buffer.emit(toEmitLoad + " "+fp+" " + to_string(addr));//FIXME: check if the address is right
 	}
 }
 | STREF {
@@ -1186,8 +1239,10 @@ EXP: EXP TK_addop EXP {
 		$$.registerNum = bank.getRegister($$.type);
 		string toEmitLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
 		toEmitLoad+= to_string($$.registerNum);
+		
+		string fp = $$.type == INT ? "I1" : "I3"; 
 
-		buffer.emit(toEmitLoad + " 0 " + to_string($$.addr));//FIXME: check if the address is right
+		buffer.emit(toEmitLoad + " " +fp+ " " + to_string($$.addr));//FIXME: check if the address is right
 	}else{
 		//struct!
 		//take care only in assinment, keep all data (just in case..)
@@ -1215,6 +1270,9 @@ EXP: EXP TK_addop EXP {
 
 }
 | CALL {
+	
+	$$.registerNum = $1.registerNum;
+	$$.type = $1.type;
 }
 ;
 /**********************************************************************************
@@ -1347,6 +1405,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	//check if args types match?
 	
 	std::list<t_type> tmp;
+	
 
 	for (auto& it : $4.paramNodes){
 		tmp.push_back(it.first);
@@ -1367,13 +1426,60 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	
 	//take care of stack, etc
 	
-	//get function symbol table
-	//push function symbol table
 	
 	
-	//emit the call
+	//insert arguments in revers!
+	int intCount=0;
+	int realCount=0;
+	for (auto i = $4.paramNodes.rbegin(); i != $4.paramNodes.rend(); ++i) {
+		
+		if(i->first == INT){
+			buffer.emit("STORI I" + to_string(i->second) + " I2 " + to_string(intCount++));
+
+		}else if(i->first == REAL){
+			buffer.emit("STORR R" + to_string(i->second) + " I4 " + to_string(realCount++));
+		}else{
+			assert(0); //our internal error
+		}
+	}
 	
 	
+	//then update sp + insert an empty place for results (the +1)
+	buffer.emit("ADD2I I2 I2 " + to_string(intCount+1));
+	buffer.emit("ADD2I I4 I4 " + to_string(realCount+1));
+		
+	
+	
+	//tmp register to remember old FP (function call from inside block)
+	buffer.emit("COPYI I5 I1");
+	buffer.emit("COPYI I6 I2");
+	
+	//then set fp=fp (for both types)
+	buffer.emit("COPYI I1 I2");
+	buffer.emit("COPYI I3 I4");
+
+	
+	//emit the call (to startLine)
+	buffer.emit("JLINK " + to_string(fI->second.startLine));
+	
+	
+	//get the return value and type
+	$$.type = fI->second.returnType;
+	$$.registerNum = bank.getRegister($$.type );
+	string resultLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
+	string sp = $$.type == INT ? "I2" : "I4"; 
+
+	buffer.emit(resultLoad + to_string($$.registerNum) + " " +sp+ "-1"); //sp -1
+	
+	
+	//restore fp
+	buffer.emit("COPYI I1 I5");
+	buffer.emit("COPYI I2 I6");
+	
+	//restore sp
+	
+	buffer.emit("SUBTI I2 I2 " + to_string(intCount+1));
+	buffer.emit("SUBTI I4 I4 " + to_string(realCount+1));
 	
 }
 ;

@@ -62,13 +62,25 @@ void MemHandler::startBLK(){
 
 	//remember the memroy places we used
 	for(int i =0 ; i< 2 ; i++){
-		scopeMem[i] = bank[i];
+		scopeMem[i].push(bank[i]);
 	}
+	//update SP. (add)
+
+
+	//init offsets back to 0
+	bank[REAL] = 0;
+	bank[INT]  = 0;
+
 }
 
 void MemHandler::endBLK(){
-	//resotre the memory places
+	//init offsets back to where they where in the father block.
+
 	for(int i =0 ; i< 2 ; i++){
-		bank[i] = scopeMem[i];
+		bank[i] = scopeMem[i].top();
+		scopeMem[i].pop();
 	}
+	//update SP (dec)
+
+
 }

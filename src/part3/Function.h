@@ -18,7 +18,7 @@ using namespace std;
 
 //this is in minus...
 //Fixme: TODO:
-#define INITIAL_OFFSET 2
+#define INITIAL_OFFSET -2
 #define UNDEFINED_START_LINE 99
 
 

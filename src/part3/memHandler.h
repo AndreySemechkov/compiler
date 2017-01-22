@@ -9,11 +9,15 @@
 #define MEMHANDLER_H_
 
 #include "definitions.h"
+#include <stack>
 
+//
+// Class MemHandler : handles offset for the current BLK.
+//
 class MemHandler {
 	int bank[2];
 
-	int scopeMem[2]; //in order to forget all the temporary memory allocated in a block
+	std::stack<int> scopeMem[2]; //in order to forget all the temporary memory allocated in a block
 public:
 	MemHandler();
 	virtual ~MemHandler();
@@ -34,10 +38,10 @@ public:
 	int getBulkMem(t_type type, int numFieldsOfType);
 
 
-	//remember the memroy places we used
+	//remember the memroy places we used, and init offsets back to 0
 	void startBLK();
 
-	//resotre the memory places
+	//init offsets back to where they where in the father block.
 	void endBLK();
 
 
