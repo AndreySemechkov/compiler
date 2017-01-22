@@ -89,58 +89,88 @@ void yyerror(const char* msg);
 /**********************************************************************************
  *                        PROGRAM
  ***********************************************************************************/
-PROGRAM: TDEFS FDEFS MAIN_FUNCTION
+PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION
 {
     //making the halt line and adding the header to the buffer 
 	vector<string> implementedLine;
 	vector<string> unimplementedLine;
-	vecotr<string> headerLines;
+	vector<string> headerLines;
 	
 	
 	
 	if(isMain){
 		//the current file that is parsed has the main
 		headerLines.push_back("<main>");
-		buffer.backpatch($1.nextList,$4.quad);//TODO check the backpatch
+		buffer.backpatch($2.nextList,$5.quad);//TODO check the backpatch
 		buffer.emit("HALT");
 	}
 	else{
 		// empty
 		headerLines.push_back("<empty>");
-		buffer.backpatch($1.nextList,0);//TODO check the backpatch
+		buffer.backpatch($2.nextList,0);//TODO check the backpatch
 	}
 	//add the <header> as the last line
-	headerLines.push_back("<header>");
+		headerLines.push_back("<header>");
 	
 	unimplementedLine.push_back("<unimplemented>");
 	implementedLine.push_back("<implemented>");
+	bool firstFlag = true;
 	for(map<string,Function>::iterator it = functionsTable.begin(); it != functionsTable.end(); ++it){
-		
-		if(it->implemented){
-			//<implemented> foo,1,2,23, goo,2,23,44, doo
+		if(it->second.implemented){
+			//<implemented> foo,1 goo,2 doo
 					implementedLine.push_back(" ");
 					implementedLine.push_back(it->first);
-					implementedLine.push_back(",");
-					for(vector<int>iterator itVec = it->calledFromLines.begin(); itVec != it->calledFromLines.end(); ++itVec){
-					    implementedLine.push_back(to_string(*itVec));
+					
+					if(it->second.startLine > 0){
 						implementedLine.push_back(",");
+                                     		implementedLine.push_back(to_string(it->second.startLine));					                                       }
+                                        else
+					{
+						cerr << "Semantic error: " << "no implementation for a non extern function" << endl;
+						exit(EXIT_SEMANTIC_FAILURE);
 					}
 		}
 		else{
 			//<unimplemented> foo,1,2,23, goo,2,23,44, doo
-					unimplementedLine.push_back(" ");
+			        if(!firstFlag){
+			        	//the comma after the last linenum
+			        	unimplementedLine.push_back(",");
+			        }
+			        firstFlag = false;
+			        unimplementedLine.push_back(" ");
 					unimplementedLine.push_back(it->first);
-					unimplementedLine.push_back(",");
-					for(vector<int>iterator itVec = it->calledFromLines.begin(); itVec != it->calledFromLines.end(); ++itVec){
+					vector<int>::iterator itVec = it->second.calledFromLines.begin();
+					while( itVec != it->second.calledFromLines.end() ){
+					    unimplementedLine.push_back(",");
 						unimplementedLine.push_back(to_string(*itVec));
-						unimplementedLine.push_back(",");
+						++itVec;
 					}
-		}
-		
+		}		
 	}
 	
-	its = headerLines.begin();
-	headerLines.insert(its,"</header>");
+	
+	string unimplementedLineString;
+	for(auto s : unimplementedLine){
+			//<unimplemented> foo,1,2,23, goo,2,23,44, doo
+			unimplementedLineString += s;
+	}
+	vector<string>:: iterator its = headerLines.begin();
+	headerLines.insert(its,unimplementedLineString);
+	
+	string implementedLineString;
+	for(auto s : implementedLine){
+		//<implemented> foo,1 goo,2 doo to header lines
+		implementedLineString += s;
+	}
+	vector<string>:: iterator itss = headerLines.begin();
+	headerLines.insert(itss,implementedLineString);
+	
+	vector<string>:: iterator itsss = headerLines.begin();
+	headerLines.insert(itsss,"</header>");
+	
+	for(auto line : headerLines){
+	  buffer.insertHeader(line);
+	}
 }
 ;
 /**********************************************************************************
