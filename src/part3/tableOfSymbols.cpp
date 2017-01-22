@@ -192,6 +192,7 @@ void TableOfSymbols::endScope(int *spAddReal, int *spAddInt) {
 				this->scopeMap.erase(it++);
 		}
 	}
+
 	*spAddReal = BLKoffsets_REAL.begin().operator *();
 	*spAddInt = BLKoffsets_INT.begin().operator *();
 
