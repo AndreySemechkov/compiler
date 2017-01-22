@@ -99,7 +99,7 @@ PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION
 	
 	
 	if(isMain){
-		//the current file that is parsed has the main
+		//the current file that is parsed has the main 
 		headerLines.push_back("<main>");
 		buffer.backpatch($2.nextList,$5.quad);//TODO check the backpatch
 		buffer.emit("HALT");
@@ -111,7 +111,7 @@ PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION
 	}
 	//add the <header> as the last line
 		headerLines.push_back("<header>");
-	
+	//TODO: check with saar that he did the implementation of implemented,calledFromLines,startLine,main
 	unimplementedLine.push_back("<unimplemented>");
 	implementedLine.push_back("<implemented>");
 	bool firstFlag = true;
