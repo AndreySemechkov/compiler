@@ -440,11 +440,12 @@ MAIN_FUNCTION: TK_main {
 }
 ;
 
-BLK: DECLARATIONS '{' LIST '}' {
+BLK: DECLARATIONS '{' LIST M '}' {
 	// each function has its local scope with a clean table of its scope and its inner symbols.
 	//TableOfSymbols localTableOfSymbols;
 
 	//we reached the end the scope, update symbolTable.top()
+	buffer.backpatch($3.nextList , $4.quad);
 	int real_sum;
 	int int_sum;
 	symbolTable.top().endScope(&real_sum, &int_sum);
@@ -703,23 +704,31 @@ WRITE: TK_write '(' EXP ')' ';' {
 	} else {
 		//(our internal error)
 	}
-
+	
 }
 | TK_write '(' TK_str ')' ';' {
-
-	for (size_t i = 0; i < $3.value.length(); i++) {
+	
+	//		
+		for (unsigned int i = 0 ; i < $3.value.length() ; i++){	
+			
 		char currentChar = $3.value[i];
 		//take care of \n and \r :
-		if (currentChar == '\\' && $3.value[i+1] == 'n') {
+		if (currentChar == '\\' &&  i != ($3.value.length() -1) && $3.value[i+1] == 'n') {
 			currentChar = '\n';
 			i++;
-		} else if (currentChar == '\\' && $3.value[i+1] == 't') {
+		} else if (currentChar == '\\' && i != ($3.value.length() -1) && $3.value[i+1] == 't') {
 			currentChar = '\t';
 			i++;
 		}
 		//cast to asci
 		int asci_char = static_cast<int>(currentChar);
+		if(asci_char < 0){
+			printf("the string is %s char %c ascii %d and to_string will be %s  \n",$3.value.c_str(), currentChar, asci_char, to_string(asci_char).c_str());
+			assert(0);
+			
+		}
 		buffer.emit("PRNTC " + to_string(asci_char));
+		i++;
 	}
 
 }
