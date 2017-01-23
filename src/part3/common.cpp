@@ -43,9 +43,9 @@ int main(int argc, char* argv[])
     	  exit(EXIT_OPERATIONAL_FAILURE);
     }
 
-//#if YYDEBUG
+#if YYDEBUG
     yydebug=1;
-//#endif
+#endif
     yyin = fopen(argv[1],"r");
     int rs;
     rs = yyparse();

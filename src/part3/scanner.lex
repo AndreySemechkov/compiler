@@ -66,12 +66,10 @@ not              [!]
         }
 {whitespace} {}
 {str} {
-
-	char * buff = (char*)malloc(strlen(yytext-1));
-	strncpy(buff, &yytext[1], strlen(yytext) - 2 );
-	strcat(buff,"\0");
-	setValue("str", buff);
-    free(buff);  
+        char *c = yytext;
+        c[yyleng-1] = '\0';
+        c++;
+        setValue("str", c);
 	return TK_str;                                  
       } 
 {relop}	{
