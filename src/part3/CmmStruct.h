@@ -26,8 +26,8 @@ using namespace std;
 //
 //note: CmmStructField can be REAL, INT or a previously defined CmmStruct
 //
-struct CmmStructField {
-
+class CmmStructField {
+public:
 //public:
 	string name;
 	t_type type;

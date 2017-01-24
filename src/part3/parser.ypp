@@ -297,6 +297,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 			
 		}
 		functionSymbolTable.tmpFunctionNewScopeEnd();
+		functionSymbolTable.setIsFunction(true);
 		//PUSH!
 		symbolTable.push(functionSymbolTable);
 		currentFunctionReturnType.push($2.type);
@@ -474,16 +475,52 @@ DECLARATIONS: TK_var DECLARLIST {
 	
 	int real_sum =0 ;
 	int int_sum = 0;
-	for(auto& it : $$.dclNodes){
+	for(auto& it : $2.dclNodes){
 		real_sum+= it.second.getNumRealFields();
 		int_sum+= it.second.getNumIntFields();
 
 	}
 
 	
+
+	
+	//special case: function
+	std::map<string,stack<symbol>>& mapRef = symbolTable.top().getScopeMap();
+	if(symbolTable.top().getIsFunction()){
+		//copy symbols from stack so we can use the locally
+		
+		for(auto& it : mapRef){
+			
+			if(it.second.top().address < 0){ //in stack
+				int oldaddr = it.second.top().address;
+				t_type mytype = it.second.top().type;
+				it.second.top().address = mem.getMem(mytype);
+				if(mytype == INT){
+					int_sum++;
+				}else{
+					real_sum++;
+				}
+				string toEmitLoad = (mytype == INT) ? "LOADI I" : "LOADR R";
+				string toEmitStore = (mytype == INT) ? "STORI I" : "STORR R";
+				int reg = bank.getRegister(mytype);
+				toEmitLoad+=to_string(reg);
+				toEmitStore+=to_string(reg);
+				string fp = mytype == INT ? "I1" : "I3"; 
+				toEmitLoad+=" " + fp +" " + to_string(oldaddr);
+				toEmitStore+=" " + fp +" " + to_string(it.second.top().address); //new addr
+				buffer.emit(toEmitLoad);
+				buffer.emit(toEmitStore);
+			}
+			
+		}
+		
+		
+	}
+	symbolTable.top().setIsFunction(false);
 	//add to sp
 	buffer.emit("ADD2I I2 I2 " + to_string(int_sum));
 	buffer.emit("ADD2I I4 I4 " + to_string(real_sum));
+	
 	
 	symbolTable.top().startNewScope(real_sum,int_sum);
 
@@ -551,8 +588,48 @@ DECLARATIONS: TK_var DECLARLIST {
 }
 | /*epsilon*/{
 	mem.startBLK();
-	int tmp = 0; //to remove wierd call...
-	symbolTable.top().startNewScope(tmp,tmp);  // only because we call end scope in BLK
+	
+	int int_sum=0;
+	int real_sum=0;
+	
+	//special case: function
+	std::map<string,stack<symbol>>& mapRef = symbolTable.top().getScopeMap();
+	if(symbolTable.top().getIsFunction()){
+		//copy symbols from stack so we can use the locally
+		
+		for(auto& it : mapRef){
+			
+			if(it.second.top().address < 0){ //in stack
+				int oldaddr = it.second.top().address;
+				t_type mytype = it.second.top().type;
+				it.second.top().address = mem.getMem(mytype);
+				if(mytype == INT){
+					int_sum++;
+				}else{
+					real_sum++;
+				}
+				string toEmitLoad = (mytype == INT) ? "LOADI I" : "LOADR R";
+				string toEmitStore = (mytype == INT) ? "STORI I" : "STORR R";
+				int reg = bank.getRegister(mytype);
+				toEmitLoad+=to_string(reg);
+				toEmitStore+=to_string(reg);
+				string fp = mytype == INT ? "I1" : "I3"; 
+				toEmitLoad+=" " + fp +" " + to_string(oldaddr);
+				toEmitStore+=" " + fp +" " + to_string(it.second.top().address); //new addr
+				buffer.emit(toEmitLoad);
+				buffer.emit(toEmitStore);
+			}
+			
+		}
+		
+		
+	}
+	symbolTable.top().setIsFunction(false);
+	
+	buffer.emit("ADD2I I2 I2 " + to_string(int_sum));
+	buffer.emit("ADD2I I4 I4 " + to_string(real_sum));
+	
+	symbolTable.top().startNewScope(real_sum,int_sum);  // only because we call end scope in BLK
 }
 ;
 /**********************************************************************************
@@ -699,6 +776,11 @@ STMT_RETURN: TK_return '(' EXP ')' ';' {
 		cerr << "in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
+	
+	//pop the stack baby!
+	//(SP = FP)
+	buffer.emit("COPYI I2 I1");
+	buffer.emit("COPYI I4 I3");
 	
 	string eStore = ($3.type == INT)? "STORI I" : "STORR R";
 	$$.registerNum = $3.registerNum;
@@ -1576,7 +1658,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	
 	
 	
-	//then set fp=fp (for both types)
+	//then set fp=sp (for both types)
 	buffer.emit("COPYI I1 I2");
 	buffer.emit("COPYI I3 I4");
 
@@ -1593,7 +1675,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	string resultLoad = ($$.type == INT) ? "LOADI I" : "LOADR R";
 	string sp = $$.type == INT ? "I2" : "I4"; 
 
-	buffer.emit(resultLoad + to_string($$.registerNum) + " " +sp+ "-1"); //sp -1
+	buffer.emit(resultLoad + to_string($$.registerNum) + " " +sp+ " -1"); //sp -1
 	
 
 	

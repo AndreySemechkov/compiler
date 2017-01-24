@@ -85,7 +85,7 @@ private:
 	std::list<int> BLKoffsets_INT;
 	std::list<int> BLKoffsets_REAL;
 
-
+	bool isFunction;
 
 public:
 
@@ -145,10 +145,19 @@ public:
 	void addSymbolStruct(string name, t_type symType,int INTaddress, int REALadress, string typeName) throw(string);
 
 
-
+	bool getIsFunction(){
+		return isFunction;
+	}
+	void setIsFunction(bool val){
+		isFunction = val;
+	}
 
 	//for supporting BLKs - type must be INT or REAL
-	int getBLKoffset(t_type typet) const;
+	int getBLKoffset(t_type typet,int delta) const;
+
+	std::map<string,stack<symbol>>& getScopeMap(){
+		return this->scopeMap;
+	}
 
 };
 

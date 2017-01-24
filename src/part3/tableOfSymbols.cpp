@@ -10,7 +10,8 @@
 
 TableOfSymbols::TableOfSymbols() {
 	this->currentTableScopeID = 0;
-	this->parsingDeclerations = false;
+	this->isFunction=false;
+
 }
 
 TableOfSymbols::~TableOfSymbols() {
@@ -63,46 +64,54 @@ int TableOfSymbols::getAddr(string name) const throw (string) {
 		throw name;
 	//throw " symbol " + name + " does not exist";
 
-	if (this->currentTableScopeID == -1) {
+	int paramScopeID = it->second.top().scopeID;
+	//int curSc = this->currentTableScopeID;
+
+	int delta = (-1 - paramScopeID);
+
+	if (delta == 0) {
 
 		return it->second.top().address;
 
 	} else {
 
 		t_type tt = it->second.top().type;
-		int sum = getBLKoffset(tt);
+		int sum = getBLKoffset(tt,delta);
 
 		return (it->second.top().address + sum);
 	}
 
 }
 
-int TableOfSymbols::getBLKoffset(t_type typet) const {
-	int delta = (-1 - this->currentTableScopeID);
-	assert(delta > 0);
-	//must be positive!
+
+int TableOfSymbols::getBLKoffset(t_type typet, int delta) const {
+
+	assert(delta>0);
 	std::list<int>::const_iterator IT2;
 	std::list<int>::const_iterator IT3;
 
-	if (typet == INT) {
-		IT2 = this->BLKoffsets_INT.begin();
-		IT3 = this->BLKoffsets_INT.end();
-	} else if (typet == REAL) {
-		IT2 = this->BLKoffsets_REAL.begin();
-		IT3 = this->BLKoffsets_REAL.end();
+		if (typet == INT) {
+			IT2 = this->BLKoffsets_INT.begin();
+			IT3 = this->BLKoffsets_INT.end();
+		} else if (typet == REAL) {
+			IT2 = this->BLKoffsets_REAL.begin();
+			IT3 = this->BLKoffsets_REAL.end();
 
-	} else {
-		assert(0); //ILLIGAL CALL!!!!
-	}
-	++IT2;
-	int sum = 0;
+		} else {
+			assert(0); //ILLIGAL CALL!!!!
+		}
+		++IT2;
+		int sum = 0;
 
-	for (; IT2 != IT3; ++IT2) {
-		sum += *IT2;
-	}
-	return sum;
+
+
+		for (; delta>0, IT2 != IT3; ++IT2, delta--) {
+			sum += *IT2;
+		}
+		return sum;
 
 }
+
 
 /*
  void TableOfSymbols::print() const
@@ -232,12 +241,14 @@ int TableOfSymbols::getINTStartAddr(string name) const throw (string) {
 	if (it == this->scopeMap.end())
 		throw name;
 	//throw " symbol " + name + " does not exist";
+	int paramScopeID = it->second.top().scopeID;
+	int delta = (-1 - paramScopeID);
 
-	if (this->currentTableScopeID == -1) {
+	if (delta == 0) {
 		return it->second.top().m_INTstartAddr;
 	} else {
 
-		int sum = getBLKoffset(INT);
+		int sum = getBLKoffset(INT,delta);
 		return (it->second.top().m_INTstartAddr + sum);
 
 	}
@@ -250,11 +261,14 @@ int TableOfSymbols::getREALStartAddr(string name) const throw (string) {
 	if (it == this->scopeMap.end())
 		throw name;
 	//throw " symbol " + name + " does not exist";
-	if (this->currentTableScopeID == -1) {
+	int paramScopeID = it->second.top().scopeID;
+	//int curSc = this->currentTableScopeID;
+	int delta = (-1 - paramScopeID);
+	if (delta == 0) {
 
 		return it->second.top().m_REALstartAddr;
 	} else {
-		int sum = getBLKoffset(REAL);
+		int sum = getBLKoffset(REAL,delta);
 		return (it->second.top().m_REALstartAddr + sum);
 
 	}
