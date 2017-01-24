@@ -15,6 +15,7 @@ std::map<std::string,CmmStruct> structsTable;
 std::map<std::string, Function> functionsTable;
 std::stack<t_type> currentFunctionReturnType;
 bool isMain;
+int rs;
 
 
 extern int yyparse ();
@@ -36,6 +37,13 @@ int main(int argc, char* argv[])
 	}
     string inputCodeName = argv[1];
 
+    yyin = fopen(argv[1],"r");
+    if(yyin==NULL)
+    {
+    	  cerr << "Operational error: ";
+    	  cerr << "Invalid argument!" << endl;
+    	  exit(EXIT_OPERATIONAL_FAILURE);
+    }
     if(inputCodeName.substr(inputCodeName.find_last_of("."),4) != ".cmm")
     {
     	  cerr << "Operational error: ";
@@ -44,11 +52,12 @@ int main(int argc, char* argv[])
     }
 
 //#if YYDEBUG
-    yydebug=1;
+//    yydebug=1;
 //#endif
-    yyin = fopen(argv[1],"r");
-    int rs;
-    rs = yyparse();
+    
+    //int rs;
+    yyparse();
+    cout << rs << endl;
     if (rs == 0) { // Parsed successfully
       buffer.printRiski(inputCodeName);
     }

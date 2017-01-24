@@ -127,7 +127,8 @@ PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION
                                         else
 					{
 						cerr << "Semantic error: " << "no implementation for a non extern function" << endl;
-						exit(EXIT_SEMANTIC_FAILURE);
+                                         rs = 1;						
+                              exit(EXIT_SEMANTIC_FAILURE);
 					}
 		}
 		else{
@@ -171,6 +172,7 @@ PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION
 	for(auto line : headerLines){
 	  buffer.insertHeader(line);
 	}
+        rs =0;
 }
 ;
 /**********************************************************************************
@@ -191,7 +193,9 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 		}catch(string err){
 			cerr << "Semantic error: " << err;
 			cerr << " in line number " << it.first << endl;
+                                         rs = 1;						
 			exit(EXIT_SEMANTIC_FAILURE);
+                                         rs = 1;						
 		}
 		
 	}
@@ -200,6 +204,7 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 	if(structsTable.find($6.value) != structsTable.end()){
 		cerr << "Semantic error: " << "multiple definitions of struct name " + $6.value ;
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -233,6 +238,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 		//semantic error
 		cerr << "Semantic error: Function return type must be INT or REAL.";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
@@ -254,6 +260,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 			
 			cerr << "Semantic error: " << err ;
 			cerr << " in line number " << it.first << endl;
+                                         rs = 1;						
 			exit(EXIT_SEMANTIC_FAILURE);
 			
 		}
@@ -263,6 +270,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	if(functionsTable.find(f.name) != functionsTable.end()){
 		cerr << "Semantic error: Multiple declarations of function `" + f.name + "`";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}else{
 		
@@ -329,6 +337,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 		//semantic error
 		cerr << "Semantic error: Function return type must be INT or REAL.";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
@@ -351,6 +360,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 			
 			cerr << "Semantic error: " << err ;
 			cerr << " in line number " << it.first << endl;
+                                         rs = 1;						
 			exit(EXIT_SEMANTIC_FAILURE);
 			
 		}
@@ -360,6 +370,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	if(functionsTable.find(f.name) != functionsTable.end()){
 		cerr << "Semantic error: Multiple declarations of function `" + f.name + "`";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}else{
 		
@@ -396,6 +407,7 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
 		
 		cerr << "Semantic error: Function arguments must be be INT or REAL.";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -412,6 +424,7 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
 		
 		cerr << "Semantic error: Function arguments be INT or REAL.";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
@@ -551,6 +564,7 @@ DECLARATIONS: TK_var DECLARLIST {
 			} catch(string e) {
 				cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
 				cerr << " in line number " << it.first << endl;
+                                         rs = 1;						
 				exit(EXIT_SEMANTIC_FAILURE);
 			}
 			
@@ -567,6 +581,7 @@ DECLARATIONS: TK_var DECLARLIST {
 			if(structITR== structsTable.end()){
 				cerr << "Semantic error: '" << it.second.structDescriptor->m_name << "' does not name a type";
 				cerr << " in line number " << it.first << endl;
+                                         rs = 1;						
 				exit(EXIT_SEMANTIC_FAILURE);
 				
 			}
@@ -582,6 +597,7 @@ DECLARATIONS: TK_var DECLARLIST {
 			} catch(string e) {
 				cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
 				cerr << " in line number " << it.first << endl;
+                                         rs = 1;						
 				exit(EXIT_SEMANTIC_FAILURE);
 			}
 		}
@@ -691,6 +707,7 @@ DCL: TK_id ':' TYPE {
 		//semantic error
 		cerr << "Semantic error: '" << $3.value << "' does not name a type";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -774,12 +791,14 @@ STMT_RETURN: TK_return '(' EXP ')' ';' {
 	if(currentFunctionReturnType.empty() || currentFunctionReturnType.top() == NONE){
 		cerr << "Semantic error: return statement inside main()";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
 	if($3.type!=currentFunctionReturnType.top()){
 		cerr << "Semantic error: return type does not match expected type ";
 		cerr << "in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -810,6 +829,12 @@ WRITE: TK_write '(' EXP ')' ';' {
 		buffer.emit("PRNTR R" + to_string($3.registerNum));
 	} else {
 		//(our internal error)
+		//semantic error - read exept only INT or REAL
+		cerr << "Semantic error:"
+		<< " WRITE expecting types: REAL or INT "
+		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
+		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
 }
@@ -859,6 +884,7 @@ READ: TK_read '(' LVAL ')' ';' {
 		cerr << "Semantic error:"
 		<< " READ expecting types: REAL or INT "
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 
@@ -975,6 +1001,7 @@ LVAL: TK_id {
 	if(!exists) {
 		cerr << "Semantic error: undeclared symbol '" << name << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	//lval can be a struct!
@@ -1019,6 +1046,7 @@ LVAL: TK_id {
 	{
 		cerr << "Semantic error: undeclared symbol '" << e << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 
@@ -1057,6 +1085,7 @@ CNTRL: TK_if BEXP TK_then M STMT TK_else N M STMT {
 	 * $8 M2
 	 * $9 S2
 	 */
+       cout << "im here if then else" << endl;
 	buffer.backpatch($2.trueList, $4.quad);
 	buffer.backpatch($2.falseList, $8.quad);
 	// merge all three to S list
@@ -1071,6 +1100,7 @@ CNTRL: TK_if BEXP TK_then M STMT TK_else N M STMT {
 	 * $4 M
 	 * $5 S
 	 */
+        cout << "im here if then"<<endl;
 	buffer.backpatch($2.trueList , $4.quad);
 	MERGE($$.nextList, $2.falseList, $5.nextList);
 }
@@ -1111,11 +1141,14 @@ BEXP: BEXP TK_or M BEXP {
 | EXP TK_relop EXP {
 	//semantics checks
 	//same type
+        cout <<"left is " <<  $1.type << "right is " << $3.type << endl;
 	if($1.type != $3.type) {
 		//semantic error
 		cerr << "Semantic error:"
 		<< " EXP TK_relop EXP - types must be the same"
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
+		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	//real of int only
 	if($1.type != REAL && $1.type != INT) {
@@ -1123,6 +1156,7 @@ BEXP: BEXP TK_or M BEXP {
 		cerr << "Semantic error:"
 		<< " EXP TK_relop EXP expecting types: REAL or INT "
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 
@@ -1199,6 +1233,7 @@ EXP: EXP TK_addop EXP {
 		cerr << "Semantic error:"
 		<< " different types, EXP  TK_addop EXP"
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	//set my type
@@ -1211,6 +1246,7 @@ EXP: EXP TK_addop EXP {
 		cerr << "Semantic error:"
 		<< " EXP TK_addop EXP expecting types: REAL or INT "
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 
@@ -1243,6 +1279,7 @@ EXP: EXP TK_addop EXP {
 		cerr << "Semantic error:"
 		<< " different types, EXP*EXP"
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	//set my type
@@ -1255,6 +1292,7 @@ EXP: EXP TK_addop EXP {
 		cerr << "Semantic error:"
 		<< " EXP TK_mulop EXP expecting types: REAL or INT "
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 
 	}
@@ -1291,6 +1329,7 @@ EXP: EXP TK_addop EXP {
 		cerr << "Semantic error:"
 		<< " '(' TYPE ')' EXP types should be INT or REAL"
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 
 	}
@@ -1332,6 +1371,7 @@ EXP: EXP TK_addop EXP {
 		cerr << "Semantic error:"
 		<< " '(' TYPE ')' EXP types should be INT or REAL"
 		<< " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 }
@@ -1346,6 +1386,7 @@ EXP: EXP TK_addop EXP {
 	if (!exists) {
 		cerr << "Semantic error: undeclared symbol '" << name << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 
@@ -1359,6 +1400,7 @@ EXP: EXP TK_addop EXP {
 	if ( myType != INT && myType!= REAL) {
 //		cerr << "Semantic error: invalid use of symbol '" << name << "'";
 //		cerr << "in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 //		exit(EXIT_SEMANTIC_FAILURE);
 		
 		//then it is a struct!
@@ -1475,6 +1517,7 @@ STREF: TK_id '[' TK_id ']' {
 	if(! symbolTable.top().find($1.value)){
 		cerr << "Semantic error: undeclared symbol '" << $1.value << "' ";
 		cerr << "in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
@@ -1482,6 +1525,7 @@ STREF: TK_id '[' TK_id ']' {
 	if(! symbolTable.top().isStruct($1.value)){
 		cerr << "Semantic error: can't STREF. symbol '" << $1.value << "' is not a struct!";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	//get its typename, 
@@ -1494,6 +1538,7 @@ STREF: TK_id '[' TK_id ']' {
 	if(father==structsTable.end()){
 		cerr << "Semantic error: can't STREF. symbol '" << $1.value << "' is not a decleraed struct!";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
@@ -1514,6 +1559,7 @@ STREF: TK_id '[' TK_id ']' {
 	}catch(string err){
 		cerr << "Semantic error: " << err;
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -1545,6 +1591,7 @@ STREF: TK_id '[' TK_id ']' {
 		
 		cerr << "Semantic error: can't STREF. type '" << t << "'. it is not a struct!";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
@@ -1557,6 +1604,7 @@ STREF: TK_id '[' TK_id ']' {
 	}catch(string err){ //else, semantic error
 		cerr << "Semantic error: STREF " << err;
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -1588,6 +1636,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	if(fI == functionsTable.end() ){
 		cerr << "Semantic error: no matching call for function " << $2.value;
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -1603,6 +1652,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	if( fI->second.m_types !=  tmp ){
 		cerr << "Semantic error: parameteres of function call does not match function " << $2.value ;
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 		
 	}
@@ -1745,6 +1795,7 @@ CALL_ARGS: EXP {
 	if($1.type != INT && $1.type != REAL){
 		cerr << "Semantic error: function call parameters must be INT or REAL only! ";
 		cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
 	
@@ -1759,6 +1810,7 @@ CALL_ARGS: EXP {
 		if($3.type != INT && $3.type != REAL){
 			cerr << "Semantic error: function call parameters must be INT or REAL only! ";
 			cerr << " in line number " << to_string(yylineno) << endl;
+                                         rs = 1;						
 			exit(EXIT_SEMANTIC_FAILURE);
 		}
 	
@@ -1790,6 +1842,7 @@ N : /* epsilon */
 // printig an error when no reduction rule can be applied.code 2 of error as requested showind the syntax error details
 void yyerror(const char* msg){
 	printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
-	exit(EXIT_SYNTAX_FAILURE);
+	rs = EXIT_SYNTAX_FAILURE;
+        exit(EXIT_SYNTAX_FAILURE);
 }
 

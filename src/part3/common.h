@@ -30,7 +30,7 @@ extern std::map<std::string,CmmStruct> structsTable ;
 extern std::map<std::string, Function> functionsTable;
 extern std::stack<t_type> currentFunctionReturnType;
 extern bool isMain;
-
+extern int rs;
 
 //no adress
 #define NO_ADDR -1
