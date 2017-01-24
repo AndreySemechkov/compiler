@@ -1538,7 +1538,8 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 			regIntCount++;
 			continue;
 		}
-		buffer.emit("STORI I" + to_string(regIntCount) + " I2 " + to_string(regIntCount++));
+		buffer.emit("STORI I" + to_string(regIntCount) + " I2 " + to_string(regIntCount));
+		regIntCount++;
 	}
 	int regRealCount=0;
 	while(regRealCount < bank.getRegistersCount(REAL)){
@@ -1546,7 +1547,8 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 			regRealCount++;
 			continue;
 		}
-		buffer.emit("STORR R" + to_string(regRealCount) + " I4 " + to_string(regRealCount++));
+		buffer.emit("STORR R" + to_string(regRealCount) + " I4 " + to_string(regRealCount));
+		regRealCount++;
 	}
 	
 
@@ -1611,14 +1613,16 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 					regIntCount++;
 					continue;
 				}
-		buffer.emit("LOADI I" + to_string(regIntCount) + " I2 " + to_string(regIntCount++));
+		buffer.emit("LOADI I" + to_string(regIntCount) + " I2 " + to_string(regIntCount));
+		regIntCount++;
 	}
 	while(regRealCount < bank.getRegistersCount(REAL)){
 		if(regRealCount==2 || regRealCount == 4){// SKIP SP
 			regRealCount++;
 			continue;
 		}
-		buffer.emit("LOADR R" + to_string(regRealCount) + " I4 " + to_string(regRealCount++));
+		buffer.emit("LOADR R" + to_string(regRealCount) + " I4 " + to_string(regRealCount));
+		regRealCount++;
 	}
 	
 	//TODO: we could make this more efficient
