@@ -25,7 +25,7 @@ str              ([\"][^\"\n\r]*[\"])
 comment          ([/][/].*)
 whitespace       ([\t\n \r])
 saved            "real"|"integer"|"write"|"read"|"while"|"do"|"if"|"then"|"else"|"main"|"var"|"call"|"return"|"defstruct"|"extern"
-sign             [\(\)\[\]\{\}\,\:\;] 
+sign             [\(\)\[\]\{\}\,\:\;]
 relop            (==)|(<>)|(<)|(<=)|(>)|(>=)
 addop            [+-]
 mulop            [*]|[/]     

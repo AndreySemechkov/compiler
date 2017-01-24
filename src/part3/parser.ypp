@@ -304,8 +304,14 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	
 } BLK {
 	
-	//DO ANYTHING? //fixme
-		
+	//if we got this far, we have not found a return, but return anyway :)
+	buffer.emit("COPYI I2 I1");
+	buffer.emit("COPYI I4 I3");
+	
+	buffer.emit("RETRN"); //goto IO
+	//clear tmp registers:
+	bank = RegistersBank();
+	
 }
 | FDEFS TK_extern TYPE TK_id '(' FUNC_ARGLIST_FULL ')' ';' {
 	// A big midrule action , in order to add the function to 
