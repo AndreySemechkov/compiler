@@ -33,7 +33,7 @@ int Buffer::nextQuad(){
 //prints all buffer lines
 void Buffer::print(){
 	for (auto line : bufferLines) {
-	       cout << line << endl;
+	       //cout << line << endl;
 	}
 }
 
@@ -41,7 +41,7 @@ void Buffer::print(){
 	void Buffer::printRiski(string filename)
 	{
       string filenameOut = filename.substr(0,filename.length()-4) + ".rsk";
-	  cout << filenameOut << endl;
+	  //cout << filenameOut << endl;
       ofstream myfile;
       myfile.open(filenameOut.c_str());
       for (auto line : this->bufferLines) {

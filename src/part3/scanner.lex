@@ -112,21 +112,22 @@ not              [!]
 
 void showToken(char* name){
 
-  printf("<%s,%s>",name,yytext);
+  //printf("<%s,%s>",name,yytext);
 
 }
 
 void showStr(){
-  printf("<str,");
+  //printf("<str,");
   for(int j = 1; j < yyleng - 1 ; j++){
-     printf("%c",yytext[j]);
+    // printf("%c",yytext[j]);
   }
-  printf(">");
+ // printf(">");
 }
 
 void printError(){
-  printf("\n");
-  printf("Lexical error: '%s' in line number %d\n",yytext ,yylineno);
+ // fprintf(stderr,"\n");
+  fprintf(stderr,"Lexical error: '%s' in line number %d\n",yytext ,yylineno);
+  rs =1;
   exit(1);
 }
 

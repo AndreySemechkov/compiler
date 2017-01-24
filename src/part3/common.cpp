@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     
     //int rs;
     yyparse();
-    cout << rs << endl;
+    //cout << rs << endl;
     if (rs == 0) { // Parsed successfully
       buffer.printRiski(inputCodeName);
     }

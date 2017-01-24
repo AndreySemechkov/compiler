@@ -195,7 +195,7 @@ TDEFS: TDEFS TK_defstruct '{' DECLARLIST '}' TK_id ';'
 			cerr << " in line number " << it.first << endl;
                                          rs = 1;						
 			exit(EXIT_SEMANTIC_FAILURE);
-                                         rs = 1;						
+                                         						
 		}
 		
 	}
@@ -298,7 +298,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 			
 			}catch(string s){
 				/// our internal errorr!!
-				assert(0);
+				//assert(0);
 				
 			}
 			
@@ -840,7 +840,6 @@ WRITE: TK_write '(' EXP ')' ';' {
 }
 | TK_write '(' TK_str ')' ';' {
 	
-	//cout  << "the string parser got is " << $3.value << endl;		
 		for (unsigned int i = 0 ; i < $3.value.length() ; i++){	
 			
 		char currentChar = $3.value[i];
@@ -918,6 +917,8 @@ ASSN: LVAL TK_assign EXP ';' {
 		cerr << "Semantic error:"
 		<< " ASSN expecting same types "
 		<< " in line number " << to_string(yylineno) << endl;
+                rs = 1;						
+		exit(EXIT_SEMANTIC_FAILURE);
 	}
 
 	//set type
@@ -943,7 +944,7 @@ ASSN: LVAL TK_assign EXP ';' {
 			string typeNAme = symbolTable.top().getTypeName($1.value);
 			
 			std::map<std::string,CmmStruct>::iterator Sptr1 = structsTable.find(typeNAme);
-			assert(Sptr1!=structsTable.end()); //our internal error
+			//assert(Sptr1!=structsTable.end()); //our internal error
 			sdLeft= &(Sptr1->second);
 			
 		}else{
@@ -971,6 +972,8 @@ ASSN: LVAL TK_assign EXP ';' {
 			cerr << "Semantic error:"
 			<< " ASSN expecting same types "
 			<< " in line number " << to_string(yylineno) << endl;
+                          rs = 1;						
+		        exit(EXIT_SEMANTIC_FAILURE);
 		}
 		
 		//now, do the job
@@ -1026,7 +1029,7 @@ LVAL: TK_id {
 			
 			std::map<std::string,CmmStruct>::iterator res = structsTable.find(m_typeName);
 			if(res==structsTable.end()){
-				assert(0); //our internal error!
+				//assert(0); //our internal error!
 			}
 			
 			//explicit NULL
@@ -1035,7 +1038,7 @@ LVAL: TK_id {
 				$$.INTaddr=symbolTable.top().getINTStartAddr($1.value);
 				$$.REALaddr=symbolTable.top().getREALStartAddr($1.value);
 			}catch(...){
-				assert(0); //our error
+				//assert(0); //our error
 			}
 			
 		}else{
@@ -1085,7 +1088,7 @@ CNTRL: TK_if BEXP TK_then M STMT TK_else N M STMT {
 	 * $8 M2
 	 * $9 S2
 	 */
-       cout << "im here if then else" << endl;
+       //cout << "im here if then else" << endl;
 	buffer.backpatch($2.trueList, $4.quad);
 	buffer.backpatch($2.falseList, $8.quad);
 	// merge all three to S list
@@ -1100,7 +1103,7 @@ CNTRL: TK_if BEXP TK_then M STMT TK_else N M STMT {
 	 * $4 M
 	 * $5 S
 	 */
-        cout << "im here if then"<<endl;
+       // cout << "im here if then"<<endl;
 	buffer.backpatch($2.trueList , $4.quad);
 	MERGE($$.nextList, $2.falseList, $5.nextList);
 }
@@ -1141,7 +1144,7 @@ BEXP: BEXP TK_or M BEXP {
 | EXP TK_relop EXP {
 	//semantics checks
 	//same type
-        cout <<"left is " <<  $1.type << "right is " << $3.type << endl;
+        //cout <<"left is " <<  $1.type << "right is " << $3.type << endl;
 	if($1.type != $3.type) {
 		//semantic error
 		cerr << "Semantic error:"
@@ -1421,7 +1424,7 @@ EXP: EXP TK_addop EXP {
 					
 		std::map<std::string,CmmStruct>::iterator res = structsTable.find(m_typeName);
 		if(res==structsTable.end()){
-			assert(0); //our internal error!
+			//ssert(0); //our internal error!
 		}
 		//explicit NULL
 		$$.oldFieldD = NULL;	
@@ -1429,7 +1432,7 @@ EXP: EXP TK_addop EXP {
 			$$.INTaddr=symbolTable.top().getINTStartAddr($1.value);
 			$$.REALaddr=symbolTable.top().getREALStartAddr($1.value);
 		}catch(...){
-			assert(0); //our error
+			//assert(0); //our error
 		}
 		
 	}else{ //INT or REAL
@@ -1702,7 +1705,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 			buffer.emit("STORR R" + to_string(i->second) + " I4 " + to_string(regRealCount +realCount));
 			realCount++;
 		}else{
-			assert(0); //our internal error
+			//assert(0); //our internal error
 		}
 	}
 	
@@ -1841,8 +1844,8 @@ N : /* epsilon */
 
 // printig an error when no reduction rule can be applied.code 2 of error as requested showind the syntax error details
 void yyerror(const char* msg){
-	printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
-	rs = EXIT_SYNTAX_FAILURE;
+	fprintf(stderr,"Syntax error: '%s' in line number %d\n", yytext, yylineno);
+	rs = 1;
         exit(EXIT_SYNTAX_FAILURE);
 }
 

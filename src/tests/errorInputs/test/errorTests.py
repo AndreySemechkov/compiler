@@ -3,7 +3,7 @@ import os, sys ,re
 import subprocess
 
 for file in os.listdir("."):
-    if file.endswith("1.cmm"):
+    if file.endswith(".cmm"):
         p = subprocess.Popen(["./rx-cc",file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         rc = p.returncode
