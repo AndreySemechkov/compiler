@@ -142,7 +142,7 @@ public:
 	int getREALStartAddr(string name) const throw(string);
 
 	//add symbol, struct version
-	void addSymbolStruct(string name, t_type symType,int INTaddress, int REALadress) throw(string);
+	void addSymbolStruct(string name, t_type symType,int INTaddress, int REALadress, string typeName) throw(string);
 
 
 

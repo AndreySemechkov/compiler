@@ -11,7 +11,7 @@
 // TYPES
 typedef enum { REAL, INT, NONE } t_type ;
 
-#define NUM_STACK_REGISTERS 6 //I1, I2 - fp, I3,I4 - sp,  + I5,I6 - for save
+#define NUM_STACK_REGISTERS 4 //I1, I2 - fp, I3,I4 - sp,
 #define NUM_RETURN_REGISTERS 1 //I0
 
 #define EXIT_LEXICAL_FAILURE 1

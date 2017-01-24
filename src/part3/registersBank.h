@@ -19,7 +19,8 @@ public:
 	RegistersBank();
 	virtual ~RegistersBank();
 	int getRegister(t_type type); //get next available register of requested type
-
+	int getRegistersCount(t_type type);
+	void setRegistersCount(t_type type, int toSet);
 };
 
 #endif /* REGISTERSBANK_H_ */

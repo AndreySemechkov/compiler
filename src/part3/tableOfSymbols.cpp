@@ -118,7 +118,6 @@ int TableOfSymbols::getBLKoffset(t_type typet) const {
 // adds a new symbol name name to the current scope
 void TableOfSymbols::addSymbol(string name, t_type symType, int address)
 		throw (string) {
-	printf("called with : %s %d \n", name.c_str(), symType);
 	map<string, stack<symbol>>::iterator it = this->scopeMap.find(name);
 	// new symbol, not previously declared
 	if (it == this->scopeMap.end()) {
@@ -172,6 +171,10 @@ void TableOfSymbols::addSymbol(string name, t_type symType, int address)
 // opens a new  inner blokc scope with the variables from the father scope.
 void TableOfSymbols::startNewScope(int spAddReal, int spAddInt) {
 
+
+	//added because stupied c++ calls list_insert on an empty list when we insert 0,
+	//causing a seg-fault..
+
 	this->BLKoffsets_INT.push_front(spAddInt);
 	this->BLKoffsets_REAL.push_front(spAddReal);
 
@@ -180,16 +183,25 @@ void TableOfSymbols::startNewScope(int spAddReal, int spAddInt) {
 
 // deletes all local scope variables, ends the current scope and updates table to father scope symbols
 void TableOfSymbols::endScope(int *spAddReal, int *spAddInt) {
-	for (map<string, stack<symbol>>::iterator it = this->scopeMap.begin();
-			it != this->scopeMap.end(); it++) {
-		if (it->second.top().scopeID <= this->currentTableScopeID) {
+
+
+	map<string, stack<symbol>>::iterator it = this->scopeMap.begin();
+	for (;it != this->scopeMap.end();) {
+		if ((! it->second.empty()) && it->second.top().scopeID <= this->currentTableScopeID) {
+
 			// debug
 			//cout << "deleted symbol: " << '\n';
 			//it->second.top().print();
 
 			it->second.pop();
-			if (it->second.empty())
+			if (it->second.empty()){
+
 				this->scopeMap.erase(it++);
+			}else{
+				++it;
+			}
+		}else{
+			++it;
 		}
 	}
 
@@ -250,7 +262,7 @@ int TableOfSymbols::getREALStartAddr(string name) const throw (string) {
 }
 
 void TableOfSymbols::addSymbolStruct(string name, t_type symType,
-		int INTaddress, int REALadress) throw (string) {
+		int INTaddress, int REALadress, string typeName) throw (string) {
 
 	map<string, stack<symbol>>::iterator it = this->scopeMap.find(name);
 	// new symbol, not previously declared
@@ -260,6 +272,7 @@ void TableOfSymbols::addSymbolStruct(string name, t_type symType,
 		sym.type = symType;
 		sym.m_INTstartAddr = INTaddress;
 		sym.m_REALstartAddr = REALadress;
+		sym.typeName = typeName;
 		this->scopeMap[name].push(sym);
 
 		//debug
@@ -295,6 +308,7 @@ void TableOfSymbols::addSymbolStruct(string name, t_type symType,
 		sym.type = symType;
 		sym.m_INTstartAddr = INTaddress;
 		sym.m_REALstartAddr = REALadress;
+		sym.typeName = typeName;
 		it->second.push(sym);
 
 		//debug

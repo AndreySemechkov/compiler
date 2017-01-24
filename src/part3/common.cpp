@@ -43,9 +43,9 @@ int main(int argc, char* argv[])
     	  exit(EXIT_OPERATIONAL_FAILURE);
     }
 
-#if YYDEBUG
+//#if YYDEBUG
     yydebug=1;
-#endif
+//#endif
     yyin = fopen(argv[1],"r");
     int rs;
     rs = yyparse();
@@ -92,10 +92,10 @@ void assignStructs(list<CmmStructField>& left,
 			int reg = bank.getRegister(INT);
 
 			//load to reg
-			string eLoad = "LOADI I" + to_string(reg) + " " + to_string(rAddr) + " 0";
+			string eLoad = "LOADI I" + to_string(reg) + " " + to_string(rAddr) + " I1";
 
 			//strore from reg to mem.
-			string eStore = "STORI I" + to_string(reg) + " " + to_string(lAddr) + " 0";
+			string eStore = "STORI I" + to_string(reg) + " " + to_string(lAddr) + " I1";
 
 			//now, emit
 			buffer.emit(eLoad);
@@ -110,10 +110,10 @@ void assignStructs(list<CmmStructField>& left,
 			int reg = bank.getRegister(REAL);
 
 			//load to reg
-			string eLoadR = "LOADR R" + to_string(reg) + " " + to_string(rAddrR) + " 0";
+			string eLoadR = "LOADR R" + to_string(reg) + " " + to_string(rAddrR) + " I3";
 
 			//strore from reg to mem.
-			string eStoreR = "STORR R" + to_string(reg) + " " + to_string(lAddrR) + " 0";
+			string eStoreR = "STORR R" + to_string(reg) + " " + to_string(lAddrR) + " I3";
 
 			//now, emit
 			buffer.emit(eLoadR);

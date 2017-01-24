@@ -2,7 +2,7 @@
 all: rx-cc 
 
 parser.tab.cpp parser.tab.hpp: parser.ypp
-	bison -d parser.ypp
+	bison -d -t --debug parser.ypp
 
 lex.yy.c: scanner.lex parser.tab.hpp
 	flex scanner.lex

@@ -297,6 +297,9 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 			
 		}
 		functionSymbolTable.tmpFunctionNewScopeEnd();
+		//PUSH!
+		symbolTable.push(functionSymbolTable);
+		currentFunctionReturnType.push($2.type);
 	
 } BLK {
 	
@@ -308,8 +311,8 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	//the function table before BLK will be called
 	
 	Function f;
-	f.returnType = $2.type;	
-	f.name = $3.value;
+	f.returnType = $3.type;	
+	f.name = $4.value;
 	f.implemented = false;
 	f.startLine = UNDEFINED_START_LINE;
 	//TODO: startLine? offset?
@@ -327,7 +330,7 @@ FDEFS: FDEFS TYPE TK_id '(' FUNC_ARGLIST_FULL ')'
 	//for uniqueness.
 	
 	int i = 0;
-	for( auto& it : $5.dclNodes){
+	for( auto& it : $6.dclNodes){
 		
 		FunctionSymbol sym;
 		sym.name = it.second.name;
@@ -384,7 +387,7 @@ FUNC_ARGLIST: FUNC_ARGLIST ',' DCL {
 	//check types
 	if($3.type != REAL && $3.type != INT){
 		
-		cerr << "Semantic error: Function arguments be INT or REAL.";
+		cerr << "Semantic error: Function arguments must be be INT or REAL.";
 		cerr << " in line number " << to_string(yylineno) << endl;
 		exit(EXIT_SEMANTIC_FAILURE);
 	}
@@ -445,11 +448,12 @@ BLK: DECLARATIONS '{' LIST M '}' {
 	//TableOfSymbols localTableOfSymbols;
 
 	//we reached the end the scope, update symbolTable.top()
+
 	buffer.backpatch($3.nextList , $4.quad);
 	int real_sum;
 	int int_sum;
 	symbolTable.top().endScope(&real_sum, &int_sum);
-	
+
 	buffer.emit("SUBTI I2 I2 " + to_string(int_sum));
 	buffer.emit("SUBTI I4 I4 " + to_string(real_sum));
 	
@@ -515,10 +519,10 @@ DECLARATIONS: TK_var DECLARLIST {
 			
 			//stage1: lookup in structsTable, and check if it exists
 			
-			std::map<std::string,CmmStruct>::iterator structITR = structsTable.find(it.second.name);
+			std::map<std::string,CmmStruct>::iterator structITR = structsTable.find(it.second.structDescriptor->m_name);
 			//if it does not exists: semantic error
 			if(structITR== structsTable.end()){
-				cerr << "Semantic error: '" << it.second.name << "' does not name a type";
+				cerr << "Semantic error: '" << it.second.structDescriptor->m_name << "' does not name a type";
 				cerr << " in line number " << it.first << endl;
 				exit(EXIT_SEMANTIC_FAILURE);
 				
@@ -531,7 +535,7 @@ DECLARATIONS: TK_var DECLARLIST {
 			//stage3: try to add to table
 			try {
 
-			symbolTable.top().addSymbolStruct(it.second.name , it.second.type, myINTAddr, myREALAddr );
+			symbolTable.top().addSymbolStruct(it.second.name , it.second.type, myINTAddr, myREALAddr, structITR->first);
 			} catch(string e) {
 				cerr << "Semantic error: symbol '" << e << "' multiple defnitions";
 				cerr << " in line number " << it.first << endl;
@@ -547,7 +551,8 @@ DECLARATIONS: TK_var DECLARLIST {
 }
 | /*epsilon*/{
 	mem.startBLK();
-	symbolTable.top().startNewScope(0,0);  // only because we call end scope in BLK
+	int tmp = 0; //to remove wierd call...
+	symbolTable.top().startNewScope(tmp,tmp);  // only because we call end scope in BLK
 }
 ;
 /**********************************************************************************
@@ -586,6 +591,11 @@ DCL: TK_id ':' TYPE {
 	dcl.structDescriptor = NULL;
 	//stage2: push to list
 	$$.dclNodes.push_back(std::make_pair(to_string(yylineno),dcl));
+	
+	// also remember type on the current DCL (for functions)
+	$$.type = $3.type;
+	
+	
 }
 | TK_id ':' TK_id {
 //decleration of struct
@@ -604,10 +614,15 @@ DCL: TK_id ':' TYPE {
 	//stage1: create a dcl node:
 		DCLnode dcl;
 		dcl.name = $1.value;
-		dcl.type = $3.type;
+		dcl.type = NONE;
 		dcl.structDescriptor = (&(it->second));
 	//stage2: push to list
 		$$.dclNodes.push_back(std::make_pair(to_string(yylineno),dcl));
+		
+		
+		// also remember type on the current DCL (for functions)
+		$$.type = NONE;
+		
 
 }
 | TK_id ',' DCL {
@@ -622,6 +637,10 @@ DCL: TK_id ':' TYPE {
 	//now, splice all the lists (new node + previeous nodes) to $$ list.
 	$$.dclNodes.push_back(std::make_pair(to_string(yylineno),dcl));
 	$$.dclNodes.splice($$.dclNodes.end(), $3.dclNodes);
+	
+	
+	// also remember type on the current DCL (for functions)
+	$$.type = $3.type;
 		
 }
 ;
@@ -682,7 +701,7 @@ STMT_RETURN: TK_return '(' EXP ')' ';' {
 	}
 	
 	string eStore = ($3.type == INT)? "STORI I" : "STORR R";
-	$$.registerNum = bank.getRegister($3.type);
+	$$.registerNum = $3.registerNum;
 	string fp = $3.type == INT ? "I1" : "I3"; 
 	buffer.emit(eStore + to_string($$.registerNum) + " " + fp + " -1"); //I1 -- fram PTR
 	buffer.emit("RETRN"); //goto IO
@@ -802,10 +821,35 @@ ASSN: LVAL TK_assign EXP ';' {
 
 
 	//case 2: assignment between structs 
+	//	printf("assinging structs!\n");
+		CmmStruct* sdLeft;
+		CmmStruct* sdRight;
+		
+		if($1.oldFieldD == NULL){
+			string typeNAme = symbolTable.top().getTypeName($1.value);
+			
+			std::map<std::string,CmmStruct>::iterator Sptr1 = structsTable.find(typeNAme);
+			assert(Sptr1!=structsTable.end()); //our internal error
+			sdLeft= &(Sptr1->second);
+			
+		}else{
+			//printf("assinging structs!\n");
+			sdLeft = $1.oldFieldD->structDescriptor;
+		}
+		if($3.oldFieldD == NULL){
+					string typeNAme = symbolTable.top().getTypeName($3.value);
+					std::map<std::string,CmmStruct>::iterator Sptr = structsTable.find(typeNAme);
+					assert(Sptr!=structsTable.end()); //our internal error
+					sdRight= &(Sptr->second);
+					
+		}else{
+			//printf("assinging structs!\n");
+			sdRight = $3.oldFieldD->structDescriptor;
+		}
+		
+		
 		
 		//2.1 : verify that they are struct from the same type:
-		CmmStruct* sdLeft = $1.oldFieldD->structDescriptor;
-		CmmStruct* sdRight = $3.oldFieldD->structDescriptor;
 		
 		//TODO: maybe assert they are not NULL? although this should not happen.
 		
@@ -816,6 +860,7 @@ ASSN: LVAL TK_assign EXP ';' {
 		}
 		
 		//now, do the job
+		
 		int left_int_start_addr = $1.INTaddr;
 		int left_real_start_addr = $1.REALaddr;
 		int right_int_start_addr = $3.INTaddr;
@@ -854,9 +899,30 @@ LVAL: TK_id {
 		$$.type = symbolTable.top().getType(name);
 
 		if($$.type != REAL && $$.type != INT) {
+			
+			string m_typeName = symbolTable.top().getTypeName(name);
 			//todo:
 			//means it is a struct, do we have to do something special?
 			//no! it fine we already did a lookup, and we can do it again if needed..
+			
+			
+			//check if its in the structs table (must be)
+			
+			
+			std::map<std::string,CmmStruct>::iterator res = structsTable.find(m_typeName);
+			if(res==structsTable.end()){
+				assert(0); //our internal error!
+			}
+			
+			//explicit NULL
+			$$.oldFieldD = NULL;
+			try{
+				$$.INTaddr=symbolTable.top().getINTStartAddr($1.value);
+				$$.REALaddr=symbolTable.top().getREALStartAddr($1.value);
+			}catch(...){
+				assert(0); //our error
+			}
+			
 		}else{
 			//INT,REAL case
 			$$.addr = symbolTable.top().getAddr(name);
@@ -1220,6 +1286,22 @@ EXP: EXP TK_addop EXP {
 		//(we will use the $$.value in order to lookop it in the structs table)
 		
 		
+		string m_typeName = symbolTable.top().getTypeName($1.value);
+		//todo:
+					
+		std::map<std::string,CmmStruct>::iterator res = structsTable.find(m_typeName);
+		if(res==structsTable.end()){
+			assert(0); //our internal error!
+		}
+		//explicit NULL
+		$$.oldFieldD = NULL;	
+		try{
+			$$.INTaddr=symbolTable.top().getINTStartAddr($1.value);
+			$$.REALaddr=symbolTable.top().getREALStartAddr($1.value);
+		}catch(...){
+			assert(0); //our error
+		}
+		
 	}else{ //INT or REAL
 	//FIXME:
 		
@@ -1340,7 +1422,7 @@ STREF: TK_id '[' TK_id ']' {
 	CmmStructField * fieldD;
 	
 	try{
-		fieldD = father->second.getFieldByName($1.value);
+		fieldD = father->second.getFieldByName($3.value);
 	}catch(string err){
 		cerr << "Semantic error: " << err;
 		cerr << " in line number " << to_string(yylineno) << endl;
@@ -1443,20 +1525,42 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	
 	//now, do the job:
 	
+
+
 	//take care of stack, etc
 	
+	// save all INT,REAL registers:
 	
 	
-	//insert arguments in revers!
+	int regIntCount=0;
+	while(regIntCount< bank.getRegistersCount(INT)){
+		if(regIntCount==2 || regIntCount == 4){// SKIP SP
+			regIntCount++;
+			continue;
+		}
+		buffer.emit("STORI I" + to_string(regIntCount) + " I2 " + to_string(regIntCount++));
+	}
+	int regRealCount=0;
+	while(regRealCount < bank.getRegistersCount(REAL)){
+		if(regRealCount==2 || regRealCount == 4){// SKIP SP
+			regRealCount++;
+			continue;
+		}
+		buffer.emit("STORR R" + to_string(regRealCount) + " I4 " + to_string(regRealCount++));
+	}
+	
+
+	//insert arguments in reverse!
 	int intCount=0;
 	int realCount=0;
 	for (auto i = $4.paramNodes.rbegin(); i != $4.paramNodes.rend(); ++i) {
 		
 		if(i->first == INT){
-			buffer.emit("STORI I" + to_string(i->second) + " I2 " + to_string(intCount++));
-
+			buffer.emit("STORI I" + to_string(i->second) + " I2 " + to_string(regIntCount + intCount));
+			intCount++;
 		}else if(i->first == REAL){
-			buffer.emit("STORR R" + to_string(i->second) + " I4 " + to_string(realCount++));
+			buffer.emit("STORR R" + to_string(i->second) + " I4 " + to_string(regRealCount +realCount));
+			realCount++;
 		}else{
 			assert(0); //our internal error
 		}
@@ -1464,14 +1568,11 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	
 	
 	//then update sp + insert an empty place for results (the +1)
-	buffer.emit("ADD2I I2 I2 " + to_string(intCount+1));
-	buffer.emit("ADD2I I4 I4 " + to_string(realCount+1));
+	buffer.emit("ADD2I I2 I2 " + to_string(regIntCount+intCount+1));
+	buffer.emit("ADD2I I4 I4 " + to_string(regRealCount+realCount+1));
 		
 	
 	
-	//tmp register to remember old FP (function call from inside block)
-	buffer.emit("COPYI I5 I1");
-	buffer.emit("COPYI I6 I2");
 	
 	//then set fp=fp (for both types)
 	buffer.emit("COPYI I1 I2");
@@ -1479,6 +1580,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 
 	
 	//emit the call (to startLine)
+	//set start line
 	fI->second.calledFromLines.push_back(buffer.nextQuad());
 	buffer.emit("JLINK " + to_string(fI->second.startLine));
 	
@@ -1491,16 +1593,35 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 
 	buffer.emit(resultLoad + to_string($$.registerNum) + " " +sp+ "-1"); //sp -1
 	
-	
-	//restore fp
-	buffer.emit("COPYI I1 I5");
-	buffer.emit("COPYI I2 I6");
+
 	
 	//restore sp
 	
-	buffer.emit("SUBTI I2 I2 " + to_string(intCount+1));
-	buffer.emit("SUBTI I4 I4 " + to_string(realCount+1));
+	buffer.emit("SUBTI I2 I2 " + to_string(regIntCount+intCount+1));
+	buffer.emit("SUBTI I4 I4 " + to_string(regRealCount+realCount+1));
 	
+	
+	//restore registers
+	bank.setRegistersCount(INT,regIntCount);
+	bank.setRegistersCount(REAL,regRealCount);
+	regIntCount=0;
+	regRealCount=0;
+	while(regIntCount< bank.getRegistersCount(INT)){
+		if(regIntCount==2 || regIntCount == 4){ // SKIP SP
+					regIntCount++;
+					continue;
+				}
+		buffer.emit("LOADI I" + to_string(regIntCount) + " I2 " + to_string(regIntCount++));
+	}
+	while(regRealCount < bank.getRegistersCount(REAL)){
+		if(regRealCount==2 || regRealCount == 4){// SKIP SP
+			regRealCount++;
+			continue;
+		}
+		buffer.emit("LOADR R" + to_string(regRealCount) + " I4 " + to_string(regRealCount++));
+	}
+	
+	//TODO: we could make this more efficient
 }
 ;
 

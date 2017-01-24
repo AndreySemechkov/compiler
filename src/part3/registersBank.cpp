@@ -29,3 +29,12 @@ if(bank[type] == 999 ){
 return bank[type]++;
 }
 
+
+int RegistersBank::getRegistersCount(t_type type){ //get next register
+	return bank[type];
+}
+
+
+void RegistersBank::setRegistersCount(t_type type,int toSet){
+	bank[type] = toSet;
+}
