@@ -1685,12 +1685,23 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 	buffer.emit("SUBTI I4 I4 " + to_string(regRealCount+realCount+1));
 	
 	
+	
+	int oldIntCount = regIntCount;
+	int oldRealCount =regRealCount;
 	//restore registers
+	if($$.type == REAL){
+		regRealCount++;
+	}else{
+		regIntCount++;
+	}
 	bank.setRegistersCount(INT,regIntCount);
 	bank.setRegistersCount(REAL,regRealCount);
+	
+	
+	
 	regIntCount=0;
 	regRealCount=0;
-	while(regIntCount< bank.getRegistersCount(INT)){
+	while(regIntCount< oldIntCount){
 		if(regIntCount==2 || regIntCount == 4){ // SKIP SP
 					regIntCount++;
 					continue;
@@ -1698,7 +1709,7 @@ CALL: TK_call TK_id '(' CALL_ARGS_FULL ')' {
 		buffer.emit("LOADI I" + to_string(regIntCount) + " I2 " + to_string(regIntCount));
 		regIntCount++;
 	}
-	while(regRealCount < bank.getRegistersCount(REAL)){
+	while(regRealCount < oldRealCount){
 		if(regRealCount==2 || regRealCount == 4){// SKIP SP
 			regRealCount++;
 			continue;
